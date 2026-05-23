@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environment
+.venv/
+.env
+
+# Generated outputs (regenerable from code)
+results/predictions/
+results/metrics/
+results/figures/
+cache/
+logs/
+*.npy
+
+# Datasets (downloaded separately — see README.md)
+datasets/
+
+# Model checkpoints (downloaded separately — see README.md)
+RAFT/RAFT/models/
+gmflow/gmflow/pretrained/
+*.pth
+*.ckpt
+
+# Claude Code local state
+.claude/
+.claude-shared/
+
+# IDE / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Temp
+/tmp/
+*.tmp
+*.log
