@@ -11,26 +11,27 @@ __pycache__/
 .venv/
 .env
 
-# Generated outputs (regenerable from code)
-results/predictions/
-results/metrics/
-results/figures/
-cache/
-logs/
+# Generated outputs (regenerable from code) — anchored to repo root so they
+# don't shadow same-named source dirs like src/cvflow/datasets/.
+/results/predictions/
+/results/metrics/
+/results/figures/
+/cache/
+/logs/
 *.npy
 
 # Datasets (downloaded separately — see README.md)
-datasets/
+/datasets/
 
 # Model checkpoints (downloaded separately — see README.md)
-RAFT/RAFT/models/
-gmflow/gmflow/pretrained/
+/RAFT/RAFT/models/
+/gmflow/gmflow/pretrained/
 *.pth
 *.ckpt
 
-# Claude Code local state
+# Claude Code local state (per-machine only; .claude-shared/ IS tracked)
 .claude/
-.claude-shared/
+
 
 # IDE / OS noise
 .vscode/

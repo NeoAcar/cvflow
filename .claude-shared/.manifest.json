@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "toolVersion": "0.1.0",
+  "lastExportAt": "2026-05-24T13:22:51.588Z",
+  "sessions": [
+    {
+      "sessionId": "9d3137dc-ffe8-4daa-9e7e-3d499bc64b62",
+      "author": "NeoAcar",
+      "exportedAt": "2026-05-24T13:22:51.577Z",
+      "sourceProjectRoot": "/home/neo/PythonProjects/cvflow",
+      "title": "no dont add .claude saher ill push it to",
+      "firstTimestamp": "2026-05-23T17:17:43.133Z",
+      "lastTimestamp": "2026-05-24T13:22:16.121Z",
+      "totalRedactionHits": 0,
+      "totalMalformed": 0,
+      "totalRecovered": 0,
+      "totalSkipped": 0,
+      "sourceMtimeMs": 1779628964815.612,
+      "sourceRecordCount": 660,
+      "artifacts": [
+        {
+          "kind": "transcript",
+          "bundlePath": "main.jsonl",
+          "originalRelativePath": "",
+          "recordCount": 660,
+          "redactionHits": 0,
+          "bytes": 1193474
+        }
+      ],
+      "previousExports": [
+        {
+          "author": "NeoAcar",
+          "exportedAt": "2026-05-23T20:31:49.362Z"
+        },
+        {
+          "author": "NeoAcar",
+          "exportedAt": "2026-05-23T20:33:45.872Z"
+        }
+      ]
+    }
+  ]
+}
