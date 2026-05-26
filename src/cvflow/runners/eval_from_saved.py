@@ -54,7 +54,9 @@ def main():
     for k in ("epe/all", "epe/matched", "epe/unmatched",
               "epe/s0_10", "epe/s10_40", "epe/s40+",
               "epe/disc", "epe/untex",
-              "bad1/all", "bad3/all", "bad5/all"):
+              "ae/all", "ae/matched", "ae/unmatched",
+              "bad1/all", "bad3/all", "bad5/all",
+              "A50/all", "A75/all", "A95/all"):
         if k in s:
             print(f"  {k:18s} {s[k]:.4f}")
     print(f"  boundary F1        {f_sum/n:.4f}   (P={p_sum/n:.4f}  R={r_sum/n:.4f})")

@@ -23,7 +23,8 @@ cvflow/
 ├── results/
 │   ├── predictions/<tag>/<dataset>/<pass>/<seq>/frame_NNNN.npy
 │   ├── metrics/                    (placeholder — CSVs go here when needed)
-│   └── figures/                    (placeholder)
+│   └── figures/
+│       └── delta_epe/<tag>/{<seq>.png, _summary.csv}
 ├── cache/masks/                    (placeholder — masks recomputed, not cached yet)
 └── logs/                           per-run logs
 ```
@@ -85,9 +86,10 @@ cvflow/
 
 ### `metrics/sintel.py`
 - `_Accum` — sum/count over masked EPE; tracks Bad-1/3/5 counts in one pass.
+- `_Accum`: stream-friendly per-mask accumulator. Tracks `sum_epe`, `sum_ae`, `sum_n`, Bad-1/3/5 counts. Keeps a bounded reservoir (`_SAMPLE_CAP = 5,000,000` masked-pixel values) for percentile estimation. Exposes `.epe()`, `.ae()`, `.bad(t)`, `.percentile(q)`.
 - `SintelMetrics`:
-  - `.update(pred, gt, occlusion, invalid, seq, disc=None, untex=None)` — adds one pair across masks `{all, matched, unmatched, s0_10, s10_40, s40+, disc?, untex?}`. Per-seq + global.
-  - `.global_summary()` → dict of `epe/<mask>` + `bad1/all`, `bad3/all`, `bad5/all`.
+  - `.update(pred, gt, occlusion, invalid, seq, disc=None, untex=None)` — adds one pair across masks `{all, matched, unmatched, s0_10, s10_40, s40+, disc?, untex?}`. Internally computes AE via `cvflow.metrics.middlebury.angular_error_deg`. Per-seq + global.
+  - `.global_summary()` → dict of `epe/<mask>`, `ae/<mask>`, plus `bad1/all`, `bad3/all`, `bad5/all`, `A50/all`, `A75/all`, `A95/all`.
   - `.per_seq_epe_all()` → dict `{seq: epe_all}`.
 
 ### `metrics/boundary_fscore.py`
@@ -105,19 +107,32 @@ The original gate runner. Runs RAFT and/or GMFlow over Sintel clean, prints `epe
 Production Sintel runner. CLI: `--model {raft,gmflow} --pass {clean,final} [--ckpt PATH] [--raft-iters N] [--no-save]`. Predicts, saves `.npy`, updates `SintelMetrics` over the 6 base masks, prints summary + per-seq EPE + ±10% pass/miss against GMFlow's published targets (for GMFlow only).
 
 ### `runners/eval_from_saved.py`
-Offline (CPU) evaluator. Reads saved `.npy` predictions + Sintel GT, computes Disc + Untex EPE + boundary F-score on top of the base masks. Adds two CLI knobs: `--disc-thresh`, `--untex-thresh`.
+Offline (CPU) evaluator. Reads saved `.npy` predictions + Sintel GT, computes Disc + Untex EPE + boundary F-score on top of the base masks, plus AE per mask and A50/A75/A95 percentiles. Adds two CLI knobs: `--disc-thresh`, `--untex-thresh`. Runtime ~110 s for 1041 pairs on CPU.
 
 ### `runners/run_middlebury.py`
 Iterates 8 Middlebury GT pairs through both models, prints per-sequence `EE/AE/R0.5/R1.0/R2.0/A50/A95` + mean. Saves `.npy` to `results/predictions/<tag>/middlebury/<seq>/flow10.npy`.
 
 ### `runners/run_raft_itersweep.py`
-RAFT iter sweep on a configurable sequence subset (default: alley_1 + market_2). For each iter level in `{4, 8, 12, 32}`: load fresh RaftWrapper, warm-up 3 frames, time per-pair with `torch.cuda.Event`, accumulate `SintelMetrics`. Output is one row per iter level.
+RAFT iter sweep over a configurable sequence subset (`--seqs`, default `alley_1 market_2`) and iter list (`--iters`, default `4 8 12 32`). For each iter level: load fresh RaftWrapper, warm-up 3 frames, time per-pair with `torch.cuda.Event`, accumulate `SintelMetrics`. Output is one row per iter level (EPE/all, s0_10, s10_40, s40+, median ms). Does not save predictions — only metrics. Full-dataset run (all 23 sequences) takes ~34 min on RTX 3050 Ti Laptop.
 
 ### `runners/run_latency_vram.py`
 Latency + peak VRAM at 1024×436. Loads a small set of mixed-sequence Sintel pairs, warm-up 5, time the next N (default 50). Reports median/mean/std/min/max latency in ms and `torch.cuda.max_memory_allocated` in MB. Runs RAFT first, then GMFlow after `empty_cache()`.
 
 ### `runners/run_photometric.py`
 Iterates Sintel clean and final separately, computes per-pair `photometric_residual` masked by `(invalid==0) ∧ (occlusion==0)`, aggregates per-sequence means, prints clean / final / Δ table.
+
+### `runners/delta_epe_maps.py`
+Reads saved `.npy` predictions on both passes, computes mean per-pixel `ΔEPE = EPE_final − EPE_clean` per sequence. Emits one PNG per sequence (diverging `RdBu_r` colormap centered at 0, clipped to 99th percentile of |Δ|) to `results/figures/delta_epe/<tag>/<seq>.png`, plus `_summary.csv` with mean / median / 95th-pct / fraction-worse-on-final / mean of positive / mean of negative ΔEPE.
+
+### `runners/run_vram_resolution.py`
+Latency + peak VRAM scan over upsample factors (default `1.0 1.5 2.0 2.5`). Upsamples Sintel pairs via `cv2.resize` (bilinear), runs `n` timed forward passes per factor for each model, catches `torch.cuda.OutOfMemoryError` and prints NaN if a config dies. Designed to fire methodology hypothesis 9 — confirmed: GMFlow latency grows quadratically, RAFT linearly above 1.5× Sintel.
+
+### `runners/run_fwdbwd_occlusion.py`
+Forward-backward consistency check (Sundaram et al. 2010 / Meister et al. 2018):
+
+    || f12(x) + f21(x + f12(x)) ||² > α · (||f12||² + ||f21(x+f12)||²) + β
+
+Defaults `α=0.01`, `β=0.5`. Builds a derived occlusion mask per pair, compares against Sintel native `occlusion == 255` via precision/recall/F1/IoU on the valid pixels. Backward flow is computed by swapping `(img1, img2) → (img2, img1)`. Forward flow can be loaded from saved `.npy` cache via `--fwd-cache <path>` — RAFT-only with cached forwards is ~14 min, full RAFT+GMFlow with cached forwards ~22 min.
 
 ## Conventions
 

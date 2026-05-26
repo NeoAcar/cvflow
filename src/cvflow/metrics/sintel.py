@@ -21,12 +21,17 @@ import numpy as np
 @dataclass
 class _Accum:
     sum_epe: float = 0.0
+    sum_ae: float = 0.0
     sum_n: int = 0
     sum_bad1: int = 0
     sum_bad3: int = 0
     sum_bad5: int = 0
+    # For percentiles we keep a streaming reservoir-style subsample: take the
+    # first N pixels of each frame's masked epe up to a global cap of ~5M.
+    epe_sample: list = field(default_factory=list)
+    _SAMPLE_CAP: int = 5_000_000
 
-    def add(self, epe: np.ndarray, mask: np.ndarray) -> None:
+    def add(self, epe: np.ndarray, mask: np.ndarray, ae: np.ndarray | None = None) -> None:
         if not mask.any():
             return
         e = epe[mask]
@@ -35,14 +40,28 @@ class _Accum:
         self.sum_bad1 += int((e > 1).sum())
         self.sum_bad3 += int((e > 3).sum())
         self.sum_bad5 += int((e > 5).sum())
+        if ae is not None:
+            self.sum_ae += float(ae[mask].sum())
+        # Save up to SAMPLE_CAP pixels for percentile estimation
+        remaining = self._SAMPLE_CAP - sum(arr.size for arr in self.epe_sample)
+        if remaining > 0:
+            self.epe_sample.append(e[:remaining].astype(np.float32))
 
     def epe(self) -> float:
         return self.sum_epe / self.sum_n if self.sum_n else float("nan")
+
+    def ae(self) -> float:
+        return self.sum_ae / self.sum_n if self.sum_n else float("nan")
 
     def bad(self, t: int) -> float:
         if self.sum_n == 0:
             return float("nan")
         return {1: self.sum_bad1, 3: self.sum_bad3, 5: self.sum_bad5}[t] / self.sum_n
+
+    def percentile(self, q: float) -> float:
+        if not self.epe_sample:
+            return float("nan")
+        return float(np.percentile(np.concatenate(self.epe_sample), q))
 
 
 @dataclass
@@ -53,7 +72,9 @@ class SintelMetrics:
 
     def update(self, pred: np.ndarray, gt: np.ndarray, occlusion: np.ndarray, invalid: np.ndarray, seq: str,
                disc: np.ndarray | None = None, untex: np.ndarray | None = None) -> None:
+        from cvflow.metrics.middlebury import angular_error_deg
         epe = np.linalg.norm(pred - gt, axis=-1)
+        ae = angular_error_deg(pred, gt)
         valid = invalid == 0
         speed = np.linalg.norm(gt, axis=-1)
         masks = {
@@ -69,17 +90,21 @@ class SintelMetrics:
         if untex is not None:
             masks["untex"] = valid & untex
         for name, m in masks.items():
-            self._g[name].add(epe, m)
-            self._by_seq[seq][name].add(epe, m)
+            self._g[name].add(epe, m, ae)
+            self._by_seq[seq][name].add(epe, m, ae)
 
     def global_summary(self) -> dict[str, float]:
         out: dict[str, float] = {}
         for name, acc in self._g.items():
             out[f"epe/{name}"] = acc.epe()
+            out[f"ae/{name}"] = acc.ae()
         a = self._g["all"]
         out["bad1/all"] = a.bad(1)
         out["bad3/all"] = a.bad(3)
         out["bad5/all"] = a.bad(5)
+        out["A50/all"] = a.percentile(50)
+        out["A75/all"] = a.percentile(75)
+        out["A95/all"] = a.percentile(95)
         return out
 
     def per_seq_epe_all(self) -> dict[str, float]:
