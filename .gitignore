@@ -13,9 +13,7 @@ __pycache__/
 
 # Generated outputs (regenerable from code) — anchored to repo root so they
 # don't shadow same-named source dirs like src/cvflow/datasets/.
-/results/predictions/
-/results/metrics/
-/results/figures/
+
 /cache/
 /logs/
 *.npy
