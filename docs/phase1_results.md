@@ -228,7 +228,7 @@ RAFT 32 iters             594   (n=50)         1.446      ← on Pareto by ~58 m
 GMFlow-refine             652   (n=50)         1.073      ← Pareto (best accuracy)
 ```
 
-**RAFT-32 vs GMFlow-refine in the same n=50 batch:** refine is 58 ms slower (10%) and 0.373 EPE lower (26% more accurate). Neither strictly dominates the other; both sit on the Pareto frontier with refine at the accuracy corner and RAFT-32 at the marginal-speed corner. The trade slope strongly favors refine for any non-zero accuracy preference. **GMFlow-basic strictly dominates RAFT-12** (252 vs 358 ms iter-sweep, 1.484 vs 1.510 EPE — faster and more accurate, even after factoring the 22% cross-batch noise).
+**RAFT-32 vs GMFlow-refine in the same n=50 batch:** refine is 58 ms slower (10%) and 0.373 EPE lower (26% more accurate). Neither strictly dominates the other; both sit on the Pareto frontier with refine at the accuracy corner and RAFT-32 at the marginal-speed corner. The trade slope strongly favors refine for any non-zero accuracy preference. **GMFlow-basic strictly dominates RAFT-12** (basic 252 ms in the n=50 batch vs RAFT-12 358 ms in the iter-sweep batch — the cross-batch drift could close at most 22% on the RAFT side, which would move RAFT-12 to ~278 ms, still slower than basic; and basic is the more accurate model — 1.484 vs 1.510 EPE).
 
 The original report's "only RAFT-32 beats GMFlow on accuracy" was true against the wrong GMFlow variant. The corrected story: refine beats RAFT-32 on accuracy by 26% at 10% higher latency. (Refine peak VRAM is 1333 MB vs RAFT-32's 529 MB — ~2.5× more, but well under any modern GPU's budget.)
 
@@ -243,7 +243,7 @@ Two timing batches recorded; each row internally consistent (intra-batch GPU the
 | min–max (ms) | 794–804 | 586–602 | 305–321 | 245–258 | 646–664 |
 | peak VRAM (MB) | 529 | 529 | **470** | 470 | 1333 |
 
-Cross-batch drift on RAFT-32: 765–796 ms (orig) vs 594 ms (n=50 all-three) — the same model on the same hardware can disagree by ~22% across batches due to GPU thermal/clock state on the 3050 Ti Laptop. The two batches' *intra-batch* numbers are precise; the cross-batch absolute scale is not. Hard latency claims should re-measure under controlled thermal state.
+Cross-batch drift on RAFT-32: 765–796 ms (orig) vs 594 ms (n=50 all-three) — the same model on the same hardware can disagree by ~22% across batches due to GPU thermal/clock state on the 3050 Ti Laptop. The two batches' *intra-batch* numbers are precise; the cross-batch absolute scale is not. Hard latency claims should re-measure under controlled thermal state. **Importantly, the within-batch RATIO between models is essentially batch-independent** (when thermal state slows the GPU, both models slow together) — so "refine is 2.6× basic" and "RAFT-32 is 2.36× basic" hold even if the absolute milliseconds drift; only the cross-batch absolute comparisons need a caveat.
 
 GMFlow-basic is ~2.4× faster than RAFT-32 (n=50 all-three batch) at Sintel resolution. GMFlow-refine is 10% slower than RAFT-32 but uses 2.5× more VRAM (1333 vs 529 MB) — still well under any modern GPU's budget at this resolution.
 
