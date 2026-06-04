@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 from cvflow.models._padder import InputPadder
+from cvflow.models.base import default_device
 
 _GMFLOW_ROOT = Path(__file__).resolve().parents[3] / "gmflow" / "gmflow"
 
@@ -51,7 +52,7 @@ class GMFlowWrapper:
         assert len(self.attn_splits_list) == len(self.corr_radius_list) == len(self.prop_radius_list) == num_scales, \
             "attn_splits_list / corr_radius_list / prop_radius_list lengths must equal num_scales"
 
-        self.device = torch.device(device) if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(device) if device else default_device()
         self.name = f"gmflow-{Path(checkpoint).stem}"
 
         GMFlow = _import_gmflow()

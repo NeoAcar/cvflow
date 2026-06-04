@@ -8,6 +8,7 @@ import numpy as np
 import torch
 
 from cvflow.models._padder import InputPadder
+from cvflow.models.base import default_device
 
 _RAFT_CORE = Path(__file__).resolve().parents[3] / "RAFT" / "RAFT" / "core"
 
@@ -37,7 +38,7 @@ class RaftWrapper:
         device: str | torch.device | None = None,
     ):
         self.iters = iters
-        self.device = torch.device(device) if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(device) if device else default_device()
         self.name = f"raft-{Path(checkpoint).stem}-iter{iters}"
 
         RAFT = _import_raft()
