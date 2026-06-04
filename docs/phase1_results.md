@@ -60,7 +60,7 @@ Bold = winner.
 | EPE / s60+ | 12.30 | **11.21** | **23.61** | 23.84 |
 | EPE / Disc | 3.58 | **3.46** | **6.26** | 6.79 |
 | EPE / Untex | 1.65 | **1.55** | **3.11** | 3.46 |
-| EPE / Blur | **2.18** | 1.88 ← *(GMFlow)* | **4.03** | 4.67 |
+| EPE / Blur | 2.18 | **1.88** | **4.03** | 4.67 |
 | Bad-1 | **0.098** | 0.160 | **0.147** | 0.209 |
 | Bad-3 | **0.044** | 0.059 | **0.081** | 0.098 |
 | Bad-5 | **0.031** | 0.039 | **0.062** | 0.071 |
@@ -148,7 +148,7 @@ Bold = winner per (sequence, column).
 | Sequence | RAFT EE | RAFT AE | RAFT R0.5 | R1.0 | R2.0 | GMFlow EE | GMFlow AE | R0.5 | R1.0 | R2.0 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Dimetrodon | **0.193** | **3.78°** | **0.054** | **0.004** | 0.000 | 0.394 | 7.64° | 0.211 | 0.011 | 0.000 |
-| Grove2 | **0.248** | **3.59°** | **0.073** | 0.035 | 0.016 | 0.346 | 5.15° | 0.145 | **0.038** | **0.009** |
+| Grove2 | **0.248** | **3.59°** | **0.073** | **0.035** | 0.016 | 0.346 | 5.15° | 0.145 | 0.038 | **0.009** |
 | Grove3 | **0.679** | **6.82°** | **0.313** | **0.170** | **0.071** | 0.770 | 7.76° | 0.462 | 0.190 | 0.073 |
 | Hydrangea | **0.224** | **2.72°** | **0.130** | **0.050** | **0.011** | 0.322 | 3.69° | 0.188 | 0.078 | 0.019 |
 | RubberWhale | **0.188** | **6.16°** | **0.062** | **0.021** | **0.003** | 0.405 | 12.76° | 0.172 | 0.051 | 0.008 |
@@ -188,7 +188,7 @@ Per-sequence and global Pearson/Spearman between per-pixel EPE and AE on GT-vali
 
 RAFT's EPE/AE correlation runs ~0.13 higher than GMFlow's globally. Urban2 is the weakest correlation cell for both models — that sequence is mostly slow synthetic motion where small absolute errors translate into large angular swings (AE noise dominates EPE signal).
 
-## 4b. AE + percentile accuracies on Sintel
+## 4c. AE + percentile accuracies on Sintel
 
 Added via the `_Accum` reservoir (capped at 5M masked samples). All numbers are global, all masks combined into the `all` (valid-GT-only) view.
 
@@ -223,11 +223,11 @@ RAFT  4 iters         198 ms,  EPE 1.910   ← Pareto (cheapest)
 RAFT  8 iters         276 ms,  EPE 1.593
 GMFlow-basic          309 ms,  EPE 1.484   ← Pareto (mid)
 RAFT 12 iters         358 ms,  EPE 1.510   ← Pareto-dominated by basic
-RAFT 32 iters         765 ms,  EPE 1.446   ← Pareto-dominated by refine on accuracy
+RAFT 32 iters         765 ms,  EPE 1.446   ← off-frontier between basic/refine
 GMFlow-refine        ~1000 ms, EPE 1.073   ← Pareto (best accuracy)
 ```
 
-Three Pareto points: RAFT-4 at the low-budget corner, GMFlow-basic mid, GMFlow-refine at best accuracy. **RAFT-32 is Pareto-dominated** — beaten on latency by GMFlow-basic (765 → 309 ms is 2.5× faster) and on accuracy by GMFlow-refine (1.446 → 1.073, ~26% lower EPE). The original report's "only RAFT-32 beats GMFlow on accuracy" was true vs the wrong GMFlow.
+Three Pareto points: RAFT-4 at the low-budget corner, GMFlow-basic mid, GMFlow-refine at best accuracy. **RAFT-32 is off the selected frontier** — GMFlow-basic is much faster at only slightly worse EPE, while GMFlow-refine is slower but substantially more accurate (1.446 → 1.073, ~26% lower EPE). The original report's "only RAFT-32 beats GMFlow on accuracy" was true only against the lower-capacity GMFlow-basic setting.
 
 ## 6. Latency + VRAM at 1024×436 (n=50, mixed sequences)
 
@@ -395,7 +395,7 @@ Each verdict now has two layers: **vs GMFlow-basic** (the original report's fram
 | 3 | RAFT sharper boundaries | F1 0.727 vs 0.697 at τ=1.0 (clean). Lead survives all three thresholds {0.5, 1.0, 2.0}. | F1 0.727 vs **0.757** (refine wins) at τ=1.0 clean, **0.756** at τ=2.0, **0.777** at τ=0.5. | **Supported vs basic, falsified vs refine at every threshold.** |
 | 4 | GMFlow > occlusions | Clean unmatched −1.74 [−3.32, −0.12] (basic wins, p=0.035). Final unmatched NULL. | Clean unmatched −3.39 [−4.91, −2.00] (refine wins). Final unmatched −1.83 [−3.05, −0.51] (refine wins). | **Supported on clean for both basic and refine; only refine is significant on final.** |
 | 5 | Both adequate on untex | Untex EPE NULL between RAFT and basic on clean; refine wins by −0.52 [−1.10, −0.14] clean. Untex / All ratio: RAFT 1.14, basic 1.05, refine 1.05. | Same direction — refine improves untex more than `all`. | **Supported as a *non-blow-up* claim**; the cross-model ratio is not informative — refine is just uniformly better. |
-| 6 | RAFT iter ↔ accuracy trade-off | Full-dataset sweep stands: EPE 1.91/1.59/1.51/1.45 at iters {4,8,12,32}. GMFlow-basic 1.484 at 309 ms. | GMFlow-refine clean EPE **1.073** at ~1000 ms — **strictly Pareto-dominates RAFT-32** (1.446 at 765 ms): faster doesn't make sense to claim, but it's the most accurate point on the curve. | **Supported as the iter-budget shape;** the Pareto picture against the *available* GMFlow variants changes — refine takes the accuracy crown, RAFT-4..12 the speed crown. See §5 rewrite. |
+| 6 | RAFT iter ↔ accuracy trade-off | Full-dataset sweep stands: EPE 1.91/1.59/1.51/1.45 at iters {4,8,12,32}. GMFlow-basic 1.484 at 309 ms. | GMFlow-refine clean EPE **1.073** at ~1000 ms — not a strict Pareto-dominator of RAFT-32 because it is slower, but it is the most accurate point on the curve. | **Supported as the iter-budget shape;** the Pareto picture against the *available* GMFlow variants changes — refine takes the accuracy crown, RAFT-4 and GMFlow-basic define the lower-latency frontier. See §5 rewrite. |
 | 7 | GMFlow more tolerant Clean→Final | RAFT ΔEPE = 1.23; GMFlow-basic = 1.46. Basic degrades **more** than RAFT in raw EPE. | GMFlow-refine ΔEPE = 1.39. Also degrades more than RAFT in raw EPE. | **Falsified.** No GMFlow variant degrades less. The original "partial on matched-relative" framing was a denominator artifact (GMFlow starts worse → same absolute Δ → smaller relative Δ); dropped. |
 | 8 | RAFT weak to weather, GMFlow to noise | Requires RobustSpring | — | **Not pursued.** RobustSpring corruption suite is out of scope for this study. No GT-free robustness numbers are reported. |
 | 9 | GMFlow VRAM blow-up | Sintel 1024×436: both <600 MB and GMFlow 2.6× faster. At 2× Sintel GMFlow's measured latency is 12,431 ms vs RAFT's 3,591 ms; at 2.5× it's 43,894 vs 6,877. | — (resolution sweep is wrapper-agnostic) | **Indicative, NOT verified.** At 2× and 2.5×, allocated memory exceeds the 3050 Ti's 4 GB physical (6.1 GB / 15 GB shown), meaning **both** models are paging through host memory via WSL2's unified-memory mechanism — and they may page differently. The reported latency mixes O(N²) attention scaling with PCIe paging cost; the two cannot be separated locally. The 1.0× and 1.5× rows are clean (well under 4 GB) and already show GMFlow trending toward the cross-over (0.41× → 0.66× latency ratio). Verification on a ≥16 GB physical-memory GPU is still required to call this "supported"; flagged in §6b and §9. |
