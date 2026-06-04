@@ -20,7 +20,8 @@
 - [x] `cvflow.masks.textureless.untext_mask` — Sobel gradient + 3×3 dilate
 - [x] `cvflow.masks.motion_boundary.disc_mask` — Sobel on GT flow + 9×9 dilate
 - [x] `cvflow.masks.photometric.photometric_residual` — warp + abs diff
-- [x] `cvflow.metrics.sintel.SintelMetrics` — EPE + AE + Bad-1/3/5 + A50/A75/A95 over `{all, matched, unmatched, s0-10, s10-40, s40+, disc, untex}`
+- [x] `cvflow.masks.blur.blur_mask` — windowed Laplacian variance (methodology §2.6, §2.8)
+- [x] `cvflow.metrics.sintel.SintelMetrics` — EPE + SD + AE + nEPE (`EPE/|gt|` on `|gt|>1`) + Bad-1/3/5/**10** + A50/A75/A95 + Pearson + Spearman over `{all, matched, unmatched, s0_1, s0_10, s10_40, s40+, s60+, disc, untex, blur}` (every metric on every mask)
 - [x] `cvflow.metrics.boundary_fscore.boundary_fscore` — F1 with `tol_px=2`
 - [x] `cvflow.metrics.middlebury` — EE, AE, R0.5/R1.0/R2.0, A50/A75/A95 with `|flow|<1e9` mask
 
@@ -34,6 +35,8 @@
 - [x] `runners/delta_epe_maps.py` — per-sequence ΔEPE PNG maps + summary CSV
 - [x] `runners/run_vram_resolution.py` — latency + VRAM at upsample factors {1, 1.5, 2, 2.5}
 - [x] `runners/run_fwdbwd_occlusion.py` — fwd-bwd consistency mask vs Sintel native (P/R/F1/IoU)
+- [x] `runners/speed_curves.py` — fine-grained speed-bucket binning + 4 line plots (EPE / AE / nEPE / Bad-1)
+- [x] `runners/middlebury_correlation.py` — per-seq + global Pearson/Spearman AE↔EPE on Middlebury
 - [x] `runners/step7_sanity.py` — original §4 item 13 gate runner (kept for history)
 
 ### Runs (Phase 1 + follow-ups)
@@ -81,6 +84,8 @@
 - Fwd-bwd derived occlusion vs Sintel native: F1 ~0.60 / IoU ~0.43 for both models. GMFlow higher precision (0.752), RAFT higher recall (0.564). Methodology §2.2 cross-check satisfied.
 
 ### Writing
-- [x] `docs/phase1_results.md` updated with all follow-up numbers (full-dataset iter sweep, resolution sweep, ΔEPE maps, fwd-bwd, AE + A50/A75/A95). H9 verdict flipped to **strongly supported at Spring-like resolutions**.
+- [x] `docs/phase1_results.md` updated with all follow-up numbers (full-dataset iter sweep, resolution sweep, ΔEPE maps, fwd-bwd, AE + A50/A75/A95)
+- [x] Methodology gap closure (Middlebury R0.5/1/2 in report, Bad-10 catastrophic, s60+ bin, full Bad/A/AE per region, normalized Sintel→Middlebury, blur mask). H1 nuanced (clean win extended to s60+; final marginal-reverse), H10 quantified at 0.209 vs 0.328 normalized.
+- [x] AE↔EPE Pearson + Spearman per mask (Sintel) + per-sequence + global (Middlebury); s0-1 sub-pixel bin; per-pixel normalized EPE; fine-grained speed-bucket line plots (`epe/ae/nepe/bad1 vs speed`). H2 extended with s0-1 (RAFT 0.161 vs GMFlow 0.245) and nEPE@s1-3 (GMFlow 2× RAFT proportional error at slow motion).
 - [ ] Final report (per project requirements — methodology + Phase 1 + Phase 2 findings + figures)
 - [ ] Figures still to make: EPE-vs-iters curve from the full sweep, latency-vs-resolution log-log plot showing the GMFlow knee, per-corruption heatmap (Phase 2), per-sequence Clean→Final ΔEPE bar chart

@@ -1,30 +1,30 @@
 {
   "schemaVersion": 2,
   "toolVersion": "0.1.0",
-  "lastExportAt": "2026-06-04T10:26:27.156Z",
+  "lastExportAt": "2026-06-04T11:53:20.391Z",
   "sessions": [
     {
       "sessionId": "9d3137dc-ffe8-4daa-9e7e-3d499bc64b62",
       "author": "NeoAcar",
-      "exportedAt": "2026-06-04T10:26:27.138Z",
+      "exportedAt": "2026-06-04T11:53:20.381Z",
       "sourceProjectRoot": "/home/neo/PythonProjects/cvflow",
-      "title": "nothing",
+      "title": "3. ae and epe correaltion peaarson and spearman all the configs like all mathced unmach the s es disc untext clean final middelbury etc 2. adn new s bucket s 0-1 1. idk if it is meanging full but rela…",
       "firstTimestamp": "2026-05-23T17:17:43.133Z",
-      "lastTimestamp": "2026-06-04T10:26:06.429Z",
+      "lastTimestamp": "2026-06-04T11:49:17.367Z",
       "totalRedactionHits": 0,
       "totalMalformed": 0,
       "totalRecovered": 0,
       "totalSkipped": 0,
-      "sourceMtimeMs": 1780568766585.1423,
-      "sourceRecordCount": 960,
+      "sourceMtimeMs": 1780573983803.6536,
+      "sourceRecordCount": 1219,
       "artifacts": [
         {
           "kind": "transcript",
           "bundlePath": "main.jsonl",
           "originalRelativePath": "",
-          "recordCount": 960,
+          "recordCount": 1219,
           "redactionHits": 0,
-          "bytes": 1810576
+          "bytes": 2373258
         }
       ],
       "previousExports": [
@@ -47,6 +47,10 @@
         {
           "author": "NeoAcar",
           "exportedAt": "2026-05-26T10:06:41.571Z"
+        },
+        {
+          "author": "NeoAcar",
+          "exportedAt": "2026-06-04T10:26:27.138Z"
         }
       ]
     }
