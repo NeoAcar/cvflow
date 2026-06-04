@@ -104,4 +104,6 @@
   - H9 retracted from "strongly supported" to "indicative, not verified" pending ≥16 GB-GPU re-run (2.0× / 2.5× rows contaminated by WSL2 unified-memory paging).
   - H7 stripped of "partial on matched-relative" qualifier (denominator artifact, not robustness signal).
 - [ ] Final report (per project requirements — methodology + Phase 1 + H8 explicit "not pursued" + figures)
-- [ ] Figures still to make: EPE-vs-iters curve from the full sweep, latency-vs-resolution log-log plot showing the GMFlow knee, per-sequence Clean→Final ΔEPE bar chart
+- [x] Seven report figures (`results/figures/report/`): `pareto.png` (latency vs EPE), `region_bars_full.png` (per-region EPE × 3 models × 2 passes), `boundary_f1_sensitivity.png` (F1 vs τ for H3), `middlebury_per_seq.png` (3-model bars × 8 seqs + MEAN for H10), `clean_to_final_delta.png` (per-sequence Δ bars for H7), `ae_epe_correlation_per_mask.png` (Pearson + Spearman × 3 models × 11 masks × 2 passes), `ae_epe_correlation_middlebury.png` (Pearson + Spearman per Middlebury sequence × 3 models). Restyled with uniform `rcParams` (no top/right spines, consistent color scheme, value labels, larger markers). Doc references inserted from §3, §4b, §5, §3.5, §11b.
+- [x] `runners/dump_correlations.py` + `results/correlations/sintel_per_mask.json` — caches per-mask Pearson/Spearman from the 5M-pixel paired reservoir for all 3 models × 2 passes; figures consume the cache.
+- [ ] Remaining figures: latency-vs-resolution log-log (H9 — needs ≥16 GB GPU re-run first)

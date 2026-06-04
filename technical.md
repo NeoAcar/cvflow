@@ -156,6 +156,27 @@ Histograms matched-pixel EPE on slow sequences (default `alley_2 + bandage_2`) a
 ### `runners/blur_motion_confound.py`
 For each Sintel-clean sequence: per-pair `blur_mask` fraction (over valid pixels) and per-pair mean `|gt_flow|`. Reports Pearson + Spearman across the 23 sequences and writes a labeled scatter PNG. §11c consumer.
 
+### `runners/make_paper_figures.py`
+Per-sample multi-panel PNG for the report — input frame + GT flow + region mask overlay + scores text + 3 model flow visualizations + 3 EPE heatmaps + 2 (basic−RAFT, refine−RAFT) diff maps. CLI: `--samples seq:idx [seq:idx ...]`, `--pass {clean,final}`, `--no-refine` to suppress GMFlow-refine columns. Writes to `results/figures/paper/panels/`. Also emits a per-sample region-EPE CSV and a horizontal bar chart of region EPE across the chosen samples.
+
+### `runners/make_report_figures.py`
+Dataset-wide report figures (not 4-sample panels). Reads per-seq JSONs, saved Middlebury `.npy` predictions, the boundary-threshold CSV, and the correlations cache from `dump_correlations.py`; writes seven PNGs to `results/figures/report/`:
+- `pareto.png` — latency vs Sintel-clean EPE, RAFT iter sweep curve + 3 cross-model markers (n=50 batch).
+- `region_bars_full.png` — 11-region EPE bars × 3 models × {clean, final} on the full 1041-pair dataset, log y-axis.
+- `boundary_f1_sensitivity.png` — F1 vs gradient-threshold τ ∈ {0.5, 1.0, 2.0} for all 3 models × 2 passes (consumes `results/figures/boundary_threshold/sensitivity.csv`).
+- `middlebury_per_seq.png` — RAFT-32 / basic / refine bars × 8 Middlebury seqs + MEAN with value labels.
+- `clean_to_final_delta.png` — per-sequence ΔEPE bars × 3 models on 23 Sintel sequences.
+- `ae_epe_correlation_per_mask.png` — Pearson + Spearman per region × 3 models × {clean, final}, 2×2 grid layout.
+- `ae_epe_correlation_middlebury.png` — Pearson + Spearman per Middlebury sequence × 3 models.
+
+Uniform color hex: RAFT-32 `#3F6FD9`, GMFlow-basic `#E07A2C`, GMFlow-refine `#3FA666`. Style is set globally via `setup_style()` (rcParams: no top/right spines, light-grey grid, ticks/labels at consistent sizes, white legend frames, 150 dpi savefig). Each figure carries an in-image legend with the standardized labels.
+
+### `runners/dump_correlations.py`
+One-off cache step: for each (model, pass) ∈ 3×2, loops the saved `.npy` predictions, accumulates paired (EPE, AE) per 11-mask reservoir (capped at 5M samples each to match `_Accum`), computes Pearson + Spearman, dumps to `results/correlations/sintel_per_mask.json`. ~13 min CPU total. Consumed by `make_report_figures.fig_correlation_per_mask`.
+
+### `models/base.py`
+`default_device()` returns the best available `torch.device` — `cuda` if `torch.cuda.is_available()`, else `mps` if Apple-Silicon MPS is available, else `cpu`. Both wrappers call this when `device=None` is passed.
+
 ### `runners/run_fwdbwd_occlusion.py`
 Forward-backward consistency check (Sundaram et al. 2010 / Meister et al. 2018):
 

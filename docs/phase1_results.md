@@ -48,6 +48,8 @@ Gate passed end-to-end.
 
 Bold = raw winner (lower number). Cells marked with **§** are statistically NULL at 95% sequence-bootstrap CI per §11a — bold winner is not significantly different from the loser. The §3 table below is **the raw point estimates only**; for "is RAFT actually winning here" go to §11a.
 
+> **Figure:** `results/figures/report/region_bars_full.png` — three-model per-region EPE bars on the full 1041-pair Sintel dataset, clean and final side-by-side, log y-axis (RAFT-32 blue, GMFlow-basic orange, GMFlow-refine green). The same data as the §3 table below, more glanceable.
+
 | Mask | **Clean RAFT** | **Clean GMFlow** | **Final RAFT** | **Final GMFlow** |
 |---|---|---|---|---|
 | EPE / all | **1.446** § | 1.484 § | **2.678** § | 2.942 § |
@@ -141,6 +143,8 @@ Key reads:
 | unmatched | +4.978 | +43% | +6.298 | +63% |
 | Disc | +2.680 | +75% | +3.324 | +96% |
 
+> **Figure:** `results/figures/report/clean_to_final_delta.png` — per-sequence ΔEPE bars for all 3 models. ambush_2 dominates the degradation budget (>15 px Δ for every model). Mean per-sequence Δ: RAFT +1.75, GMFlow-basic +2.21, GMFlow-refine +2.05 — H7 supported (RAFT degrades least; the pixel-weighted Δs in the table above and the per-sequence Δs in the figure differ because some sequences contribute many more high-EPE pixels than others).
+
 ## 4. Middlebury — zero-shot cross-dataset (Things → Middlebury)
 
 Bold = winner per (sequence, column).
@@ -188,6 +192,10 @@ Per-sequence and global Pearson/Spearman between per-pixel EPE and AE on GT-vali
 
 RAFT's EPE/AE correlation runs ~0.13 higher than GMFlow's globally. Urban2 is the weakest correlation cell for both models — that sequence is mostly slow synthetic motion where small absolute errors translate into large angular swings (AE noise dominates EPE signal).
 
+> **Figures:**
+> - `results/figures/report/ae_epe_correlation_middlebury.png` — Pearson + Spearman bars per sequence (3 models × 8 seqs). Urban2 visibly the lowest cell.
+> - `results/figures/report/ae_epe_correlation_per_mask.png` — Sintel per-mask Pearson + Spearman (3 models × 11 masks × 2 passes). Shows the s0_1 Spearman ≈ 1.0 case where rankings track even when magnitudes don't, and the GMFlow blur-final Pearson ≈ 0 case where they're completely uncorrelated.
+
 ## 4c. AE + percentile accuracies on Sintel
 
 Added via the `_Accum` reservoir (capped at 5M masked samples). All numbers are global, all masks combined into the `all` (valid-GT-only) view.
@@ -231,6 +239,8 @@ GMFlow-refine             652   (n=50)         1.073      ← Pareto (best accur
 **RAFT-32 vs GMFlow-refine in the same n=50 batch:** refine is 58 ms slower (10%) and 0.373 EPE lower (26% more accurate). Neither strictly dominates the other; both sit on the Pareto frontier with refine at the accuracy corner and RAFT-32 at the marginal-speed corner. The trade slope strongly favors refine for any non-zero accuracy preference. **GMFlow-basic strictly dominates RAFT-12** (basic 252 ms in the n=50 batch vs RAFT-12 358 ms in the iter-sweep batch — the cross-batch drift could close at most 22% on the RAFT side, which would move RAFT-12 to ~278 ms, still slower than basic; and basic is the more accurate model — 1.484 vs 1.510 EPE).
 
 The original report's "only RAFT-32 beats GMFlow on accuracy" was true against the wrong GMFlow variant. The corrected story: refine beats RAFT-32 on accuracy by 26% at 10% higher latency. (Refine peak VRAM is 1333 MB vs RAFT-32's 529 MB — ~2.5× more, but well under any modern GPU's budget.)
+
+> **Figure:** `results/figures/report/pareto.png` — latency vs Sintel-clean EPE with the RAFT iter sweep curve and three n=50 cross-model markers (RAFT-32 / GMFlow-basic / GMFlow-refine).
 
 ## 6. Latency + VRAM at 1024×436 (n=50, mixed sequences)
 
@@ -571,6 +581,8 @@ Two facts:
 
 Threshold absolute swing is 1.5–4.5 percentage points per config — non-trivial but doesn't flip any pairwise ranking within a given pass. F1 at τ=0.5 is uniformly higher (~3 pp) than at τ=2.0 for every config.
 
+> **Figure:** `results/figures/report/boundary_f1_sensitivity.png` — F1 vs τ ∈ {0.5, 1.0, 2.0} for all 3 models × {clean, final}. Three parallel lines on each subplot, no ranking flips.
+
 ### 11c. Blur-mask ↔ motion-magnitude confound
 
 Per-sequence correlation across the 23 Sintel-clean sequences:
@@ -605,6 +617,8 @@ Methodology §3 H10 asks for normalized cross-dataset score. Two reasonable norm
 The "RAFT generalizes 36% better than basic" in the original §4b uses the `all` normalizer, which is dominated by Sintel's s10+ tail. Middlebury motion magnitudes are mostly < 10 px, so the **`s0_10` normalizer is the better-matched comparison** and gives a smaller (27% vs 36%) gap.
 
 RAFT keeps the directional win on both normalizers. The refine result is notable: refine has **lower** Sintel-s0_10 EPE than basic (0.302 vs 0.456 — a big drop) but only **slightly lower** Middlebury EE (0.402 vs 0.486 — a small drop). Normalized, refine therefore has the *largest* Sintel/Middlebury gap of the three. **This is NOT Sintel-overfitting** (both checkpoints are Things-trained, neither saw Sintel during training); it's a **motion-regime effect**: refine's extra capacity helps Sintel's large/structured-motion content (the s10+ tail) more than it helps Middlebury's all-small-motion regime. Re-phrased: higher capacity fits the large-motion regime better, and that gain doesn't transfer to small-motion data.
+
+> **Figure:** `results/figures/report/middlebury_per_seq.png` — RAFT-32 / basic / refine bars per sequence + MEAN. RAFT lowest on all 8 sequences and on the MEAN. Refine beats basic on 7/8 (Venus is the outlier — refine is *worse* than basic there, the only such reversal across both Sintel passes and Middlebury).
 
 ### 11e. H9 resolution-sweep follow-up
 
