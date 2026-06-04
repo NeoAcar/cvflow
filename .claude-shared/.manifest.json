@@ -1,30 +1,45 @@
 {
   "schemaVersion": 2,
   "toolVersion": "0.1.0",
-  "lastExportAt": "2026-06-04T11:53:20.391Z",
+  "lastExportAt": "2026-06-04T14:55:31.032Z",
   "sessions": [
     {
       "sessionId": "9d3137dc-ffe8-4daa-9e7e-3d499bc64b62",
       "author": "NeoAcar",
-      "exportedAt": "2026-06-04T11:53:20.381Z",
+      "exportedAt": "2026-06-04T14:55:31.011Z",
       "sourceProjectRoot": "/home/neo/PythonProjects/cvflow",
-      "title": "3. ae and epe correaltion peaarson and spearman all the configs like all mathced unmach the s es disc untext clean final middelbury etc 2. adn new s bucket s 0-1 1. idk if it is meanging full but rela…",
+      "title": "i not gonna do the robust spring",
       "firstTimestamp": "2026-05-23T17:17:43.133Z",
-      "lastTimestamp": "2026-06-04T11:49:17.367Z",
+      "lastTimestamp": "2026-06-04T14:55:06.341Z",
       "totalRedactionHits": 0,
       "totalMalformed": 0,
       "totalRecovered": 0,
       "totalSkipped": 0,
-      "sourceMtimeMs": 1780573983803.6536,
-      "sourceRecordCount": 1219,
+      "sourceMtimeMs": 1780584925263.4795,
+      "sourceRecordCount": 1583,
       "artifacts": [
         {
           "kind": "transcript",
           "bundlePath": "main.jsonl",
           "originalRelativePath": "",
-          "recordCount": 1219,
+          "recordCount": 1583,
           "redactionHits": 0,
-          "bytes": 2373258
+          "bytes": 3199548
+        },
+        {
+          "kind": "subagent",
+          "bundlePath": "subagents/agent-afor-the-gmflow-8f20682e0c13b86b.jsonl",
+          "originalRelativePath": "subagents/agent-afor-the-gmflow-8f20682e0c13b86b.jsonl",
+          "recordCount": 5,
+          "redactionHits": 0,
+          "bytes": 12732
+        },
+        {
+          "kind": "subagent-meta",
+          "bundlePath": "subagents/agent-afor-the-gmflow-8f20682e0c13b86b.meta.json",
+          "originalRelativePath": "subagents/agent-afor-the-gmflow-8f20682e0c13b86b.meta.json",
+          "redactionHits": 0,
+          "bytes": 127
         }
       ],
       "previousExports": [
@@ -51,6 +66,10 @@
         {
           "author": "NeoAcar",
           "exportedAt": "2026-06-04T10:26:27.138Z"
+        },
+        {
+          "author": "NeoAcar",
+          "exportedAt": "2026-06-04T11:53:20.381Z"
         }
       ]
     }

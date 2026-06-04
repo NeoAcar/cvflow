@@ -35,6 +35,9 @@ def main():
     ap.add_argument("--untex-thresh", type=float, default=5.0)
     ap.add_argument("--blur-window", type=int, default=7)
     ap.add_argument("--blur-thresh", type=float, default=20.0)
+    ap.add_argument("--dump-json", default=None,
+                    help="If set, write per-sequence per-mask raw sums + counts to this JSON path "
+                         "(input format for bootstrap_compare).")
     args = ap.parse_args()
 
     pred_dir = Path(args.pred_root) / "sintel" / args.pass_
@@ -81,6 +84,10 @@ def main():
     for seq in sorted(by_seq):
         seq_f1 = float(np.mean(fscore_per_seq[seq]))
         print(f"    {seq:14s} EPE={by_seq[seq]:.4f}  F1={seq_f1:.4f}")
+
+    if args.dump_json:
+        m.dump_per_seq(args.dump_json)
+        print(f"\nwrote per-seq stats to {args.dump_json}")
 
 
 if __name__ == "__main__":

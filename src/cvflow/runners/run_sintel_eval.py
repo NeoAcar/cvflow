@@ -16,21 +16,34 @@ from cvflow.datasets.sintel import Sintel
 from cvflow.metrics.sintel import SintelMetrics
 
 
-def load_model(kind: str, ckpt: str | None, raft_iters: int):
+GMFLOW_REFINE_PRESET = dict(
+    padding_factor=32,
+    attn_splits_list=[2, 8],
+    corr_radius_list=[-1, 4],
+    prop_radius_list=[-1, 1],
+    num_scales=2,
+    upsample_factor=4,
+)
+
+
+def load_model(kind: str, ckpt: str | None, raft_iters: int, gmflow_refine: bool = False):
     if kind == "raft":
         from cvflow.models.raft_wrapper import RaftWrapper
         ckpt = ckpt or "RAFT/RAFT/models/raft-things.pth"
         return RaftWrapper(ckpt, iters=raft_iters)
     if kind == "gmflow":
         from cvflow.models.gmflow_wrapper import GMFlowWrapper
+        if gmflow_refine:
+            ckpt = ckpt or "gmflow/gmflow/pretrained/gmflow_with_refine_things-36579974.pth"
+            return GMFlowWrapper(ckpt, **GMFLOW_REFINE_PRESET)
         ckpt = ckpt or "gmflow/gmflow/pretrained/gmflow_things-e9887eda.pth"
         return GMFlowWrapper(ckpt)
     raise ValueError(kind)
 
 
 def run(model_kind: str, ckpt: str | None, pass_: str, sintel_root: str, out_root: str,
-        raft_iters: int, save: bool, log_every: int = 100) -> dict:
-    model = load_model(model_kind, ckpt, raft_iters)
+        raft_iters: int, save: bool, gmflow_refine: bool = False, log_every: int = 100) -> dict:
+    model = load_model(model_kind, ckpt, raft_iters, gmflow_refine=gmflow_refine)
     tag = model.name
     print(f"model {tag}  device={model.device}  pass={pass_}")
 
@@ -87,33 +100,28 @@ def main():
     ap.add_argument("--sintel-root", default="datasets/Sintel")
     ap.add_argument("--out", default="results")
     ap.add_argument("--no-save", action="store_true")
+    ap.add_argument("--gmflow-refine", action="store_true",
+                    help="Use gmflow_with_refine_things checkpoint + refine config preset.")
     args = ap.parse_args()
 
     r = run(args.model, args.ckpt, args.pass_, args.sintel_root, args.out,
-            raft_iters=args.raft_iters, save=not args.no_save)
+            raft_iters=args.raft_iters, save=not args.no_save,
+            gmflow_refine=args.gmflow_refine)
 
-    # GMFlow basic, Sintel clean — official evaluate.sh numbers
-    GMFLOW_CLEAN = {
-        "epe/all":   1.495,
-        "epe/s0_10": 0.457,
-        "epe/s10_40": 1.770,
-        "epe/s40+": 8.257,
-        "bad1/all": 0.161,
-        "bad3/all": 0.059,
-        "bad5/all": 0.040,
-    }
-    GMFLOW_FINAL = {
-        "epe/all":   2.955,
-        "epe/s0_10": 0.725,
-        "epe/s10_40": 3.446,
-        "epe/s40+": 17.701,
-        "bad1/all": 0.209,
-        "bad3/all": 0.098,
-        "bad5/all": 0.071,
+    # GMFlow basic & refine, Sintel — official evaluate.sh numbers
+    GMFLOW_TGTS = {
+        ("basic",  "clean"): {"epe/all": 1.495, "epe/s0_10": 0.457, "epe/s10_40": 1.770, "epe/s40+": 8.257,
+                              "bad1/all": 0.161, "bad3/all": 0.059, "bad5/all": 0.040},
+        ("basic",  "final"): {"epe/all": 2.955, "epe/s0_10": 0.725, "epe/s10_40": 3.446, "epe/s40+": 17.701,
+                              "bad1/all": 0.209, "bad3/all": 0.098, "bad5/all": 0.071},
+        ("refine", "clean"): {"epe/all": 1.084, "epe/s0_10": 0.303, "epe/s10_40": 1.252, "epe/s40+": 6.261,
+                              "bad1/all": 0.092, "bad3/all": 0.040, "bad5/all": 0.028},
+        ("refine", "final"): {"epe/all": 2.475, "epe/s0_10": 0.511, "epe/s10_40": 2.810, "epe/s40+": 15.669,
+                              "bad1/all": 0.147, "bad3/all": 0.077, "bad5/all": 0.058},
     }
     tgt = None
     if args.model == "gmflow":
-        tgt = GMFLOW_CLEAN if args.pass_ == "clean" else GMFLOW_FINAL
+        tgt = GMFLOW_TGTS[("refine" if args.gmflow_refine else "basic", args.pass_)]
     print_report(args.model, r, tgt)
 
 

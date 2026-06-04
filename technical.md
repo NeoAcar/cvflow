@@ -8,6 +8,8 @@ cvflow/
 ├── CLAUDE.md                       behavioral guidelines + project-specific rules
 ├── progress.md                     done / pending checklist
 ├── technical.md                    this file
+├── src/cvflow/analysis/            NEW package for offline statistical analyses
+│   └── bootstrap.py                paired sequence-level bootstrap (CI on Δmetric)
 ├── .venv/                          uv venv, Python 3.11, torch 2.6.0+cu124
 ├── datasets/
 │   ├── Sintel/training/{clean,final,flow,occlusions,invalid,albedo,flow_viz}/
@@ -71,10 +73,10 @@ cvflow/
 
 ### `models/gmflow_wrapper.py`
 - `_import_gmflow()` — clears `gmflow*` from `sys.modules`, adds `gmflow/gmflow` to `sys.path`, returns the `GMFlow` class.
-- `GMFlowWrapper(checkpoint, padding_factor=16, attn_splits=2, corr_radius=-1, prop_radius=-1, device=None)`:
+- `GMFlowWrapper(checkpoint, padding_factor=16, attn_splits_list=(2,), corr_radius_list=(-1,), prop_radius_list=(-1,), num_scales=1, upsample_factor=8, device=None)`:
   - Handles both `{'model': sd, ...}` and raw `sd` checkpoint formats.
   - `predict(img1_u8, img2_u8)` → normalize-inside-model GMFlow, returns `out['flow_preds'][-1]`.
-  - Basic GMFlow config: `num_scales=1`, `feature_channels=128`, `attention_type='swin'`, `num_transformer_layers=6`, `ffn_dim_expansion=4`, `num_head=1`, `upsample_factor=8`.
+  - Defaults reproduce the basic (no-refinement) numbers identically. The **refine preset** (matching upstream `evaluate.sh`'s with-refinement block) is: `padding_factor=32, attn_splits_list=[2,8], corr_radius_list=[-1,4], prop_radius_list=[-1,1], num_scales=2, upsample_factor=4`. `run_sintel_eval.py` and `run_middlebury.py` expose this as `--gmflow-refine` so the six values flip atomically.
 
 ### `masks/textureless.py`
 `untext_mask(img_uint8, grad_thresh=5.0) -> bool[H,W]` — RGB→gray, Sobel(ksize=3), `‖∇I‖ < τ`, 3×3 dilate. Baker §4.3 convention.
@@ -95,6 +97,11 @@ cvflow/
   - `.update(pred, gt, occlusion, invalid, seq, disc=None, untex=None, blur=None)` — adds one pair across masks `{all, matched, unmatched, s0_1, s0_10, s10_40, s40+, s60+, disc?, untex?, blur?}`. Internally computes AE via `cvflow.metrics.middlebury.angular_error_deg`. Per-seq + global.
   - `.global_summary()` → dict emitting per-mask `epe/<mask>`, `sd/<mask>`, `ae/<mask>`, `nepe/<mask>`, `bad{1,3,5,10}/<mask>`, `A{50,75,95}/<mask>`, `pearson/<mask>`, `spearman/<mask>` for every active mask.
   - `.per_seq_epe_all()` → dict `{seq: epe_all}`.
+  - `.dump_per_seq(path)` — serialize per-sequence per-mask raw `(sum_epe, sum_epe_sq, sum_ae, sum_n, sum_bad{1,3,5,10}, sum_nepe, sum_nepe_n)` as JSON; the bootstrap module's input format.
+
+### `analysis/bootstrap.py`
+- `load_per_seq(path)` — load a `dump_per_seq` JSON.
+- `paired_bootstrap(stats_a, stats_b, mask, metric, n_boot=10_000, seed=0) -> BootResult` — resample sequence indices with replacement (paired between A and B), recompute the pixel-weighted weighted mean per resample, return mean, point estimate Δ, 95% CI, two-sided p-value, and a `crosses_zero` flag. Supported `metric` values: `epe / ae / bad1 / bad3 / bad5 / bad10 / nepe`. Sequence-level (not pixel-level) bootstrap — pixels within a sequence are not independent.
 
 ### `metrics/boundary_fscore.py`
 `boundary_fscore(pred_flow, gt_flow, grad_thresh=1.0, tol_px=2) -> (P, R, F1)` — builds Sobel-grad binary edge maps for both, then matches each map against the dilated other using a `2*tol_px+1` kernel.
@@ -136,6 +143,18 @@ Bins pixels by GT-flow magnitude on fine edges `[0,1,3,10,20,40,60,∞]`, accumu
 
 ### `runners/middlebury_correlation.py`
 Reads saved Middlebury `.npy` predictions, applies `gt_valid_mask`, computes per-sequence and global Pearson + Spearman between per-pixel EPE and AE for each model. No GPU.
+
+### `runners/bootstrap_compare.py`
+Loads two per-seq JSONs (from `eval_from_saved --dump-json`) and prints a CI'd Δ table over a configurable mask × metric grid. CLI: `--a <json> --b <json> [--masks ...] [--metrics ...] [--n-boot 10000] [--seed 0]`. Used in §11a for the critique-driven bootstrap comparisons.
+
+### `runners/boundary_threshold_sweep.py`
+Recomputes the §3 boundary-F1 metric at thresholds `{0.5, 1.0, 2.0}` (or any user-supplied list) for any set of model tags × {clean, final}, reading saved predictions. Output: PNG-less; just the F1 sensitivity CSV at `results/figures/boundary_threshold/sensitivity.csv` plus a pivot table on stdout. §11b consumer.
+
+### `runners/quantization_check.py`
+Histograms matched-pixel EPE on slow sequences (default `alley_2 + bandage_2`) and a fast control (default `ambush_4`) for any tag set. Visualizes alongside k/8 px reference lines; the summary CSV reports the fraction of matched pixels within ±0.02 of each `k/8` for `k=0..8`. §11f consumer.
+
+### `runners/blur_motion_confound.py`
+For each Sintel-clean sequence: per-pair `blur_mask` fraction (over valid pixels) and per-pair mean `|gt_flow|`. Reports Pearson + Spearman across the 23 sequences and writes a labeled scatter PNG. §11c consumer.
 
 ### `runners/run_fwdbwd_occlusion.py`
 Forward-backward consistency check (Sundaram et al. 2010 / Meister et al. 2018):

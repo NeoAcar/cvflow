@@ -115,7 +115,7 @@ Thresholds are CLI flags on `eval_from_saved.py`. Change them in one place; pred
 - Don't write CPU fallbacks for things that need GPU. If something OOMs on the 4 GB 3050 Ti, the call is "move to Colab A100", not "add a CPU branch".
 - Add metrics only after surfacing them — do not silently introduce new metrics not in `docs/eval_methodology.md` §4.
 
-### Phase boundary
+### Scope
 
-- **Phase 1 (complete):** Sintel clean + final, Middlebury, iter sweep, latency/VRAM, photometric residual. All §4 items 1–10 and 13 produced.
-- **Phase 2 (deferred):** RobustSpring corruption suite — methodology §1.6, §4 items 11–12, hypothesis 8. Needs the RobustSpring dataset download (`spring-benchmark.org` / Oei et al. 2026).
+- **Phase 1 (complete):** Sintel clean + final, Middlebury, iter sweep, latency/VRAM, photometric residual + critique-driven revisions (GMFlow-refine three-way ablation, sequence-level bootstrap CIs, boundary-F1 threshold sweep, quantization-residual histograms, blur–motion confound check, alternative H10 normalization, H9 retraction). All §4 items 1–10 and 13 produced.
+- **Out of scope:** RobustSpring corruption suite — methodology §1.6, §4 items 11–12, hypothesis 8. Descoped, not deferred. Do not assume future runs will produce these numbers.

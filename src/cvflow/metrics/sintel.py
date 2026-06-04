@@ -162,3 +162,41 @@ class SintelMetrics:
 
     def per_seq_epe_all(self) -> dict[str, float]:
         return {s: accs["all"].epe() for s, accs in self._by_seq.items()}
+
+    def dump_per_seq(self, path) -> None:
+        """Serialize per-sequence per-mask raw sums + counts as JSON.
+
+        Output shape:
+            { mask_name: { seq_name: {
+                "sum_epe", "sum_epe_sq", "sum_ae", "sum_n",
+                "sum_bad1", "sum_bad3", "sum_bad5", "sum_bad10",
+                "sum_nepe", "sum_nepe_n"
+            } } }
+
+        These are enough to recompute every reported metric AND to bootstrap
+        across sequences without re-reading any prediction file.
+        """
+        import json
+        from pathlib import Path as _P
+        masks: set[str] = set()
+        for accs in self._by_seq.values():
+            masks.update(accs.keys())
+        out: dict[str, dict[str, dict[str, float | int]]] = {m: {} for m in masks}
+        for seq, accs in self._by_seq.items():
+            for m, acc in accs.items():
+                out[m][seq] = {
+                    "sum_epe":    acc.sum_epe,
+                    "sum_epe_sq": acc.sum_epe_sq,
+                    "sum_ae":     acc.sum_ae,
+                    "sum_n":      acc.sum_n,
+                    "sum_bad1":   acc.sum_bad1,
+                    "sum_bad3":   acc.sum_bad3,
+                    "sum_bad5":   acc.sum_bad5,
+                    "sum_bad10":  acc.sum_bad10,
+                    "sum_nepe":   acc.sum_nepe,
+                    "sum_nepe_n": acc.sum_nepe_n,
+                }
+        p = _P(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("w") as f:
+            json.dump(out, f, indent=2)

@@ -16,12 +16,23 @@ from cvflow.datasets.middlebury import Middlebury
 from cvflow.metrics.middlebury import summary
 
 
-def load_model(kind: str):
+_GMFLOW_REFINE_PRESET = dict(
+    padding_factor=32, attn_splits_list=[2, 8], corr_radius_list=[-1, 4],
+    prop_radius_list=[-1, 1], num_scales=2, upsample_factor=4,
+)
+
+
+def load_model(kind: str, gmflow_refine: bool = False):
     if kind == "raft":
         from cvflow.models.raft_wrapper import RaftWrapper
         return RaftWrapper("RAFT/RAFT/models/raft-things.pth", iters=32)
     if kind == "gmflow":
         from cvflow.models.gmflow_wrapper import GMFlowWrapper
+        if gmflow_refine:
+            return GMFlowWrapper(
+                "gmflow/gmflow/pretrained/gmflow_with_refine_things-36579974.pth",
+                **_GMFLOW_REFINE_PRESET,
+            )
         return GMFlowWrapper("gmflow/gmflow/pretrained/gmflow_things-e9887eda.pth")
     raise ValueError(kind)
 
@@ -31,14 +42,16 @@ def main():
     ap.add_argument("--model", choices=["raft", "gmflow", "both"], default="both")
     ap.add_argument("--middlebury-root", default="datasets/Middleburry")
     ap.add_argument("--out", default="results")
+    ap.add_argument("--gmflow-refine", action="store_true",
+                    help="When --model gmflow (or both), use the with-refinement checkpoint.")
     args = ap.parse_args()
 
     ds = Middlebury(args.middlebury_root)
     print(f"Middlebury: {len(ds.seqs)} sequences with GT")
 
     for kind in (["raft", "gmflow"] if args.model == "both" else [args.model]):
-        print(f"\n=== {kind} (things-trained, zero-shot) ===")
-        model = load_model(kind)
+        print(f"\n=== {kind} (things-trained, zero-shot{', with-refine' if (kind=='gmflow' and args.gmflow_refine) else ''}) ===")
+        model = load_model(kind, gmflow_refine=(kind == "gmflow" and args.gmflow_refine))
         pred_root = Path(args.out) / "predictions" / model.name / "middlebury"
         rows = []
         t0 = time.time()

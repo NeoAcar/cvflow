@@ -24,29 +24,41 @@ def _import_gmflow():
 
 
 class GMFlowWrapper:
-    """Basic (no-refinement) GMFlow, matching gmflow/scripts/evaluate.sh defaults."""
+    """GMFlow inference. Defaults match the basic (no-refinement) preset from
+    gmflow/scripts/evaluate.sh; the with-refinement preset takes
+        num_scales=2, upsample_factor=4, padding_factor=32,
+        attn_splits_list=[2, 8], corr_radius_list=[-1, 4], prop_radius_list=[-1, 1].
+    """
 
     def __init__(
         self,
         checkpoint: str | Path,
         padding_factor: int = 16,
-        attn_splits: int = 2,
-        corr_radius: int = -1,
-        prop_radius: int = -1,
+        attn_splits_list: list[int] | int = (2,),
+        corr_radius_list: list[int] | int = (-1,),
+        prop_radius_list: list[int] | int = (-1,),
+        num_scales: int = 1,
+        upsample_factor: int = 8,
         device: str | torch.device | None = None,
     ):
+        def _aslist(x):
+            return list(x) if hasattr(x, "__iter__") else [x]
+
         self.padding_factor = padding_factor
-        self.attn_splits_list = [attn_splits]
-        self.corr_radius_list = [corr_radius]
-        self.prop_radius_list = [prop_radius]
+        self.attn_splits_list = _aslist(attn_splits_list)
+        self.corr_radius_list = _aslist(corr_radius_list)
+        self.prop_radius_list = _aslist(prop_radius_list)
+        assert len(self.attn_splits_list) == len(self.corr_radius_list) == len(self.prop_radius_list) == num_scales, \
+            "attn_splits_list / corr_radius_list / prop_radius_list lengths must equal num_scales"
+
         self.device = torch.device(device) if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.name = f"gmflow-{Path(checkpoint).stem}"
 
         GMFlow = _import_gmflow()
 
         model = GMFlow(
-            num_scales=1,
-            upsample_factor=8,
+            num_scales=num_scales,
+            upsample_factor=upsample_factor,
             feature_channels=128,
             attention_type="swin",
             num_transformer_layers=6,
