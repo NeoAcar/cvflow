@@ -81,6 +81,6 @@
 - Fwd-bwd derived occlusion vs Sintel native: F1 ~0.60 / IoU ~0.43 for both models. GMFlow higher precision (0.752), RAFT higher recall (0.564). Methodology §2.2 cross-check satisfied.
 
 ### Writing
-- [ ] Update `docs/phase1_results.md` to fold in the follow-up numbers (full-dataset iter sweep, resolution sweep, ΔEPE, fwd-bwd, AE+percentiles) — current file is the pre-follow-up snapshot
+- [x] `docs/phase1_results.md` updated with all follow-up numbers (full-dataset iter sweep, resolution sweep, ΔEPE maps, fwd-bwd, AE + A50/A75/A95). H9 verdict flipped to **strongly supported at Spring-like resolutions**.
 - [ ] Final report (per project requirements — methodology + Phase 1 + Phase 2 findings + figures)
 - [ ] Figures still to make: EPE-vs-iters curve from the full sweep, latency-vs-resolution log-log plot showing the GMFlow knee, per-corruption heatmap (Phase 2), per-sequence Clean→Final ΔEPE bar chart
