@@ -82,6 +82,18 @@ def main():
     r = measure(gm, pairs, args.warmup, args.n)
     print(f"  median={r['median_ms']:.1f}ms  mean={r['mean_ms']:.1f}±{r['std_ms']:.1f}ms  "
           f"[{r['min_ms']:.1f}–{r['max_ms']:.1f}]  peak_VRAM={r['peak_vram_mb']:.0f}MB")
+    del gm
+    torch.cuda.empty_cache()
+
+    print(f"\n=== GMFlow (gmflow_with_refine_things, refine preset) ===")
+    gm = GMFlowWrapper(
+        "gmflow/gmflow/pretrained/gmflow_with_refine_things-36579974.pth",
+        padding_factor=32, attn_splits_list=[2, 8], corr_radius_list=[-1, 4],
+        prop_radius_list=[-1, 1], num_scales=2, upsample_factor=4,
+    )
+    r = measure(gm, pairs, args.warmup, args.n)
+    print(f"  median={r['median_ms']:.1f}ms  mean={r['mean_ms']:.1f}±{r['std_ms']:.1f}ms  "
+          f"[{r['min_ms']:.1f}–{r['max_ms']:.1f}]  peak_VRAM={r['peak_vram_mb']:.0f}MB")
 
 
 if __name__ == "__main__":
