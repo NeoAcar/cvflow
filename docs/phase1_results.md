@@ -1,4 +1,4 @@
-# Phase 1 Results — RAFT vs GMFlow on Sintel + Middlebury
+# Phase 1 Results — RAFT vs GMFlow variants on Sintel + Middlebury
 
 Inference-only evaluation. Things-trained checkpoints for both models (zero-shot framing — no Sintel fine-tuning, no Middlebury fine-tuning). All numbers reproducible from saved `.npy` predictions in `results/predictions/`.
 
@@ -10,8 +10,8 @@ Inference-only evaluation. Things-trained checkpoints for both models (zero-shot
 |---|---|
 | RAFT checkpoint | `raft-things.pth` (21 MB, Dropbox-distributed) |
 | RAFT inference iters (headline) | 32 |
-| GMFlow checkpoint | `gmflow_things-e9887eda.pth` (basic, no refinement) |
-| GMFlow attn/corr/prop | `[2]/[-1]/[-1]`, `padding_factor=16` |
+| GMFlow-basic checkpoint | `gmflow_things-e9887eda.pth` (basic, no refinement) |
+| GMFlow-basic attn/corr/prop | `[2]/[-1]/[-1]`, `padding_factor=16` |
 | Sintel train pairs | 1041 per pass (23 sequences × (frame_count − 1)) |
 | Middlebury pairs | 8 (sequences with GT) |
 | Environment | `uv venv`, Python 3.11, PyTorch 2.6.0+cu124 |
@@ -28,10 +28,10 @@ Targets are Teed & Deng 2020 Table 1 (C+T row) and the GMFlow `scripts/evaluate.
 |---|---|---|---|---|
 | RAFT | clean | 1.4459 | 1.43 | +1.1% |
 | RAFT | final | 2.6779 | 2.71 | −1.2% |
-| GMFlow | clean | 1.4839 | 1.495 | −0.7% |
-| GMFlow | final | 2.9420 | 2.955 | −0.4% |
+| GMFlow-basic | clean | 1.4839 | 1.495 | −0.7% |
+| GMFlow-basic | final | 2.9420 | 2.955 | −0.4% |
 
-Per-mask sub-comparison against GMFlow's published numbers on Sintel clean:
+Per-mask sub-comparison against the GMFlow-basic published numbers on Sintel clean:
 
 | | measured | target | Δ |
 |---|---|---|---|
@@ -50,7 +50,7 @@ Bold = raw winner (lower number). Cells marked with **§** are statistically NUL
 
 > **Figure:** `results/figures/report/region_bars_full.png` — three-model per-region EPE bars on the full 1041-pair Sintel dataset, clean and final side-by-side, log y-axis (RAFT-32 blue, GMFlow-basic orange, GMFlow-refine green). The same data as the §3 table below, more glanceable.
 
-| Mask | **Clean RAFT** | **Clean GMFlow** | **Final RAFT** | **Final GMFlow** |
+| Mask | **Clean RAFT** | **Clean GMFlow-basic** | **Final RAFT** | **Final GMFlow-basic** |
 |---|---|---|---|---|
 | EPE / all | **1.446** § | 1.484 § | **2.678** § | 2.942 § |
 | EPE / matched | **0.646** | 0.822 | **1.585** | 1.902 |
@@ -69,7 +69,25 @@ Bold = raw winner (lower number). Cells marked with **§** are statistically NUL
 | Bad-10 (catastrophic) | **0.021** | 0.023 | **0.043** | 0.047 |
 | Boundary F1 | **0.727** | 0.697 | **0.698** | 0.672 |
 
-Note on Blur row: GMFlow has lower EPE on blurred pixels (1.88 vs 2.18 clean, 4.67 vs 4.03 final — *RAFT wins on final*). The clean-pass result is unexpected; see §7d below.
+Note on Blur row: the main table is RAFT-32 vs GMFlow-basic only; §7d adds GMFlow-refine. Basic has lower clean-blur EPE than RAFT (1.88 vs 2.18), but RAFT wins final-blur EPE against basic (4.03 vs 4.67).
+
+Three-model large-displacement headline (EPE, lower is better), computed from saved `per_seq_stats/*.json`:
+
+| Pass / mask | RAFT-32 | GMFlow-basic | GMFlow-refine | best read |
+|---|---:|---:|---:|---|
+| Clean s40+ | 8.72 | 8.19 | **6.19** | refine is the clear large-motion winner |
+| Clean s60+ | 12.30 | 11.21 | **8.55** | refine wins the largest-motion tail |
+| Final s40+ | 17.41 | 17.63 | **15.60** | refine stays ahead under Final degradations |
+| Final s60+ | 23.61 | 23.84 | **20.99** | refine stays ahead in the hardest tail |
+
+The RAFT-32 vs GMFlow-basic large-motion differences are point-estimate close calls and bootstrap-NULL (§11a). The robust result is the three-model one: GMFlow-refine is significantly better than RAFT-32 on `s40+` and `s60+` in both clean and final.
+
+Three-model textureless / `untex` headline (EPE, lower is better), computed from saved `per_seq_stats/*.json`:
+
+| Pass / mask | RAFT-32 | GMFlow-basic | GMFlow-refine | best read |
+|---|---:|---:|---:|---|
+| Clean untex | 1.650 | 1.555 | **1.128** | refine wins significantly vs RAFT (§11a) |
+| Final untex | 3.109 | 3.462 | **2.838** | refine is lower as a point estimate, but RAFT vs refine is bootstrap-NULL (§11a) |
 
 ### 3b. Detailed per-mask grid (Sintel clean only)
 
@@ -91,7 +109,7 @@ Full grid for each mask: EPE, SD, AE (degrees), normalized EPE (= `EPE/|gt|` on 
 | untex | 1.650 | 12.86 | 3.78 | 0.119 | 0.095 | 0.042 | 0.031 | 0.022 | 0.068 | 0.144 | 0.625 | 0.583 | 0.684 |
 | blur | 2.175 | 14.67 | 3.77 | 0.166 | 0.108 | 0.051 | 0.039 | 0.029 | 0.208 | 0.466 | 2.151 | 0.831 | 0.439 |
 
-**GMFlow  (gmflow_things, basic, clean):**
+**GMFlow-basic  (gmflow_things, no refinement, clean):**
 
 | mask | EPE | SD | AE° | nEPE | Bad1 | Bad3 | Bad5 | Bad10 | A50 | A75 | A95 | Pearson | Spear |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -110,16 +128,16 @@ Full grid for each mask: EPE, SD, AE (degrees), normalized EPE (= `EPE/|gt|` on 
 (`—` in the nEPE column on `s0_1` is intentional: the `|gt| > 1px` floor excludes all pixels in that bucket. nEPE is undefined there.)
 
 Key reads:
-- **A50/A75 column** confirms the sub-pixel gap: RAFT median is 0.07 px across almost every mask; GMFlow's median is ~0.4 px everywhere — likely an unsuppressed 1/8-grid quantization residual from the convex upsample.
-- **Bad-10 (catastrophic)** is roughly the same global rate (2.1% RAFT vs 2.3% GMFlow), but is **dominated by occluded pixels** on both: 18.7% of RAFT's unmatched pixels catastrophically fail vs 19.9% for GMFlow. Among matched (non-occluded) pixels, both have <1% catastrophic.
-- **s60+** is much worse than s40+ on both: RAFT 12.30 vs 8.72, GMFlow 11.21 vs 8.19. The largest-displacement tail eats most of the dataset's error budget.
+- **A50/A75 column** confirms the sub-pixel gap: RAFT median is 0.07 px across almost every mask; GMFlow-basic's median is ~0.4 px everywhere — likely an unsuppressed 1/8-grid quantization residual from the convex upsample.
+- **Bad-10 (catastrophic)** is roughly the same global rate (2.1% RAFT vs 2.3% GMFlow-basic), but is **dominated by occluded pixels** on both: 18.7% of RAFT's unmatched pixels catastrophically fail vs 19.9% for GMFlow-basic. Among matched (non-occluded) pixels, both have <1% catastrophic.
+- **s60+** is much worse than s40+ on both: RAFT 12.30 vs 8.72, GMFlow-basic 11.21 vs 8.19. The largest-displacement tail eats most of the dataset's error budget.
 - **SD column** shows the EPE distribution is wildly skewed (SD ≈ 5–8× the mean almost everywhere). Mean EPE alone is misleading; the median (A50) and SD together describe the distribution.
-- **nEPE column** says the *fractional* error is roughly flat across speed buckets (RAFT 8–10% on s10+/s40+/s60+; GMFlow 9–10%). The absolute EPE grows with speed because the underlying motion grows, not because the model gets proportionally worse. The exception is **GMFlow at s0_10**: nEPE = 18.5% vs RAFT's 12.2% — GMFlow makes proportionally larger errors at slow motion (the same 1/8-grid quantization residual the A50 column hinted at, expressed as a fraction of the motion).
-- **Pearson(EPE, AE) per mask** is highly mask-dependent. Tight correlation in well-defined regimes (RAFT s40+ Pearson 0.93, GMFlow s60+ Pearson 0.86). Near-zero correlation in others (GMFlow blur clean 0.22, blur final 0.003 — *zero*). The Spearman column tells a separate story: **s0_1 Spearman is ≈0.97 for RAFT and ≈0.90 for GMFlow** — at sub-pixel motion AE rankings track EPE rankings tightly even when their magnitudes don't (Pearson 0.32 / 0.54). This matches Baker et al. 2011's observation that AE *downweights* large-motion errors — at small motion the geometry is dominated by direction, so AE and EPE rank-track even if their absolute scales diverge.
+- **nEPE column** says the *fractional* error is roughly flat across speed buckets (RAFT 8–10% on s10+/s40+/s60+; GMFlow-basic 9–10%). The absolute EPE grows with speed because the underlying motion grows, not because the model gets proportionally worse. The exception is **GMFlow-basic at s0_10**: nEPE = 18.5% vs RAFT's 12.2% — GMFlow-basic makes proportionally larger errors at slow motion (the same 1/8-grid quantization residual the A50 column hinted at, expressed as a fraction of the motion).
+- **Pearson(EPE, AE) per mask** is highly mask-dependent. Tight correlation in well-defined regimes (RAFT s40+ Pearson 0.93, GMFlow-basic s60+ Pearson 0.86). Near-zero correlation in others (GMFlow-basic blur clean 0.22, blur final 0.003 — *zero*). The Spearman column tells a separate story: **s0_1 Spearman is ≈0.97 for RAFT and ≈0.90 for GMFlow-basic** — at sub-pixel motion AE rankings track EPE rankings tightly even when their magnitudes don't (Pearson 0.32 / 0.54). This matches Baker et al. 2011's observation that AE *downweights* large-motion errors — at small motion the geometry is dominated by direction, so AE and EPE rank-track even if their absolute scales diverge.
 
 ### Per-sequence EPE (clean)
 
-| seq | RAFT | GMFlow | seq | RAFT | GMFlow |
+| seq | RAFT | GMFlow-basic | seq | RAFT | GMFlow-basic |
 |---|---|---|---|---|---|
 | alley_1 | 0.183 | 0.480 | market_2 | 0.411 | 0.522 |
 | alley_2 | 0.172 | 0.342 | market_5 | 4.788 | 4.907 |
@@ -136,7 +154,7 @@ Key reads:
 
 ### Clean → Final degradation
 
-| Mask | RAFT ΔEPE | RAFT % | GMFlow ΔEPE | GMFlow % |
+| Mask | RAFT ΔEPE | RAFT % | GMFlow-basic ΔEPE | GMFlow-basic % |
 |---|---|---|---|---|
 | all | +1.232 | +85% | +1.458 | +98% |
 | matched | +0.939 | +145% | +1.080 | +131% |
@@ -149,7 +167,7 @@ Key reads:
 
 Bold = winner per (sequence, column).
 
-| Sequence | RAFT EE | RAFT AE | RAFT R0.5 | R1.0 | R2.0 | GMFlow EE | GMFlow AE | R0.5 | R1.0 | R2.0 |
+| Sequence | RAFT EE | RAFT AE | RAFT R0.5 | R1.0 | R2.0 | GMFlow-basic EE | GMFlow-basic AE | R0.5 | R1.0 | R2.0 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Dimetrodon | **0.193** | **3.78°** | **0.054** | **0.004** | 0.000 | 0.394 | 7.64° | 0.211 | 0.011 | 0.000 |
 | Grove2 | **0.248** | **3.59°** | **0.073** | **0.035** | 0.016 | 0.346 | 5.15° | 0.145 | 0.038 | **0.009** |
@@ -161,7 +179,7 @@ Bold = winner per (sequence, column).
 | Venus | **0.218** | **2.71°** | **0.043** | **0.006** | **0.002** | 0.503 | 6.49° | 0.422 | 0.061 | 0.003 |
 | **mean** | **0.302** | **3.98°** | **0.114** | **0.046** | **0.018** | 0.486 | 6.69° | 0.287 | 0.080 | 0.022 |
 
-RAFT wins on every Middlebury sequence by EE and AE. On R0.5 (Baker's sub-half-pixel robustness threshold) RAFT averages 11.4% bad vs GMFlow's 28.7% — over 2× fewer pixels miss the 0.5-px target. R1.0 and R2.0 differences narrow as the threshold loosens.
+RAFT wins on every Middlebury sequence by EE and AE against GMFlow-basic. On R0.5 (Baker's sub-half-pixel robustness threshold) RAFT averages 11.4% bad vs GMFlow-basic's 28.7% — over 2× fewer pixels miss the 0.5-px target. R1.0 and R2.0 differences narrow as the threshold loosens.
 
 ### Normalized Sintel → Middlebury generalization (H10)
 
@@ -170,7 +188,7 @@ Methodology §3 H10: report Middlebury EPE normalized by each model's Sintel-dom
 | Model | Sintel clean EE | Middlebury mean EE | normalized score |
 |---|---|---|---|
 | RAFT | 1.446 | 0.302 | **0.209** |
-| GMFlow | 1.484 | 0.486 | 0.328 |
+| GMFlow-basic | 1.484 | 0.486 | 0.328 |
 
 Same direction as the raw numbers — RAFT generalizes ~36% better cross-dataset on this score. Useful framing because it controls for the fact that Middlebury motion magnitudes (mostly < 10 px) sit at the easier end of Sintel's distribution.
 
@@ -178,7 +196,7 @@ Same direction as the raw numbers — RAFT generalizes ~36% better cross-dataset
 
 Per-sequence and global Pearson/Spearman between per-pixel EPE and AE on GT-valid pixels.
 
-| Sequence | n (px) | RAFT Pearson | RAFT Spearman | GMFlow Pearson | GMFlow Spearman |
+| Sequence | n (px) | RAFT Pearson | RAFT Spearman | GMFlow-basic Pearson | GMFlow-basic Spearman |
 |---|---|---|---|---|---|
 | Dimetrodon | 215820 | 0.805 | 0.849 | 0.658 | 0.612 |
 | Grove2 | 307200 | **0.978** | 0.870 | **0.966** | 0.891 |
@@ -190,17 +208,17 @@ Per-sequence and global Pearson/Spearman between per-pixel EPE and AE on GT-vali
 | Venus | 159600 | 0.766 | 0.531 | 0.689 | 0.560 |
 | **GLOBAL** | 2,038,902 | **0.733** | **0.576** | **0.606** | **0.495** |
 
-RAFT's EPE/AE correlation runs ~0.13 higher than GMFlow's globally. Urban2 is the weakest correlation cell for both models — that sequence is mostly slow synthetic motion where small absolute errors translate into large angular swings (AE noise dominates EPE signal).
+RAFT's EPE/AE correlation runs ~0.13 higher than GMFlow-basic's globally. Urban2 is the weakest correlation cell for both models — that sequence is mostly slow synthetic motion where small absolute errors translate into large angular swings (AE noise dominates EPE signal).
 
 > **Figures:**
 > - `results/figures/report/ae_epe_correlation_middlebury.png` — Pearson + Spearman bars per sequence (3 models × 8 seqs). Urban2 visibly the lowest cell.
-> - `results/figures/report/ae_epe_correlation_per_mask.png` — Sintel per-mask Pearson + Spearman (3 models × 11 masks × 2 passes). Shows the s0_1 Spearman ≈ 1.0 case where rankings track even when magnitudes don't, and the GMFlow blur-final Pearson ≈ 0 case where they're completely uncorrelated.
+> - `results/figures/report/ae_epe_correlation_per_mask.png` — Sintel per-mask Pearson + Spearman (3 models × 11 masks × 2 passes). Shows the s0_1 Spearman ≈ 1.0 case where rankings track even when magnitudes don't, and the GMFlow-basic blur-final Pearson ≈ 0 case where they're completely uncorrelated.
 
 ## 4c. AE + percentile accuracies on Sintel
 
 Added via the `_Accum` reservoir (capped at 5M masked samples). All numbers are global, all masks combined into the `all` (valid-GT-only) view.
 
-| | **Clean RAFT** | **Clean GMFlow** | **Final RAFT** | **Final GMFlow** |
+| | **Clean RAFT** | **Clean GMFlow-basic** | **Final RAFT** | **Final GMFlow-basic** |
 |---|---|---|---|---|
 | AE / all (°) | **3.91** | 5.78 | **5.58** | 7.67 |
 | AE / matched (°) | **3.14** | 5.28 | **4.50** | 6.81 |
@@ -209,7 +227,27 @@ Added via the `_Accum` reservoir (capped at 5M masked samples). All numbers are 
 | A75 (px) | **0.131** | 0.497 | **0.134** | 0.517 |
 | A95 (px) | **0.707** | 1.085 | **0.723** | 1.133 |
 
-Striking detail: RAFT A50 ≈ 0.07 px on both passes — half of all valid pixels are within 0.07 px of GT. GMFlow's A50 sits at ~0.41 — likely the unsuppressed 1/8-grid quantization residual from its single-pass convex-upsample. The AE / unmatched columns flip the EE-based result: on the angular-error metric GMFlow handles occluded pixels better (12.1° vs 13.9° clean, 18.6° vs 19.3° final), consistent with H4.
+Three-model AE headline (lower is better), computed from the saved `per_seq_stats/*.json` reservoirs for Sintel and saved Middlebury `.npy` predictions:
+
+| Dataset / pass | RAFT-32 | GMFlow-basic | GMFlow-refine | winner |
+|---|---:|---:|---:|---|
+| Sintel clean | **3.91°** | 5.78° | 4.09° | RAFT-32 |
+| Sintel final | **5.58°** | 7.67° | 5.92° | RAFT-32 |
+| Middlebury | **3.98°** | 6.69° | 5.52° | RAFT-32 |
+
+This is the main EPE/AE split in the refined comparison: GMFlow-refine takes the best Sintel EPE, but RAFT-32 remains the best angular-error model on Sintel clean, Sintel final, and Middlebury.
+
+Three-model small-motion / precision headline on Sintel clean (lower is better), computed offline from saved predictions:
+
+| Metric | RAFT-32 | GMFlow-basic | GMFlow-refine | best read |
+|---|---:|---:|---:|---|
+| A50 / all (px) | **0.067** | 0.411 | 0.231 | RAFT has the cleanest median pixel |
+| Bad-1 / all | 0.098 | 0.160 | **0.091** | refine slightly lowest; RAFT close |
+| nEPE / s1-3 | **0.1255** | 0.2534 | 0.1549 | refine closes most of basic's slow-motion gap |
+
+These numbers sharpen the sub-pixel story: GMFlow-basic has a clear slow-motion residual; GMFlow-refine removes much of it, but RAFT-32 still has the lowest median error and the lowest normalized error in the `s1-3` bucket.
+
+Striking detail: RAFT A50 ≈ 0.07 px on both passes — half of all valid pixels are within 0.07 px of GT. GMFlow-basic's A50 sits at ~0.41 — likely the unsuppressed 1/8-grid quantization residual from its single-pass convex-upsample. The AE / unmatched columns flip the EE-based result: on the angular-error metric GMFlow-basic handles occluded pixels better (12.1° vs 13.9° clean, 18.6° vs 19.3° final), consistent with H4.
 
 ## 5. RAFT iter sweep — full Sintel clean (1041 pairs × 4 iter levels)
 
@@ -246,7 +284,7 @@ The original report's "only RAFT-32 beats GMFlow on accuracy" was true against t
 
 Two timing batches recorded; each row internally consistent (intra-batch GPU thermal state stable, ±2–4 ms across n=50 pairs). **Cross-model verdicts use the n=50-all-three batch** since those three configs were measured back-to-back under the same thermal conditions.
 
-| | RAFT-32 (orig batch) | RAFT-32 (n=50 all-three) | GMFlow basic (orig) | GMFlow basic (n=50 all-three) | GMFlow refine (n=50 all-three) |
+| | RAFT-32 (orig batch) | RAFT-32 (n=50 all-three) | GMFlow-basic (orig) | GMFlow-basic (n=50 all-three) | GMFlow-refine (n=50 all-three) |
 |---|---|---|---|---|---|
 | median (ms) | 796 | **594** | 309 | **252** | **652** |
 | mean ± SD (ms) | 796 ± 2 | 594 ± 4 | 310 ± 2 | 252 ± 3 | 652 ± 4 |
@@ -259,20 +297,22 @@ GMFlow-basic is ~2.4× faster than RAFT-32 (n=50 all-three batch) at Sintel reso
 
 ### 6b. Resolution sweep — H9 **indicative only**, NOT verified
 
-> **Contamination.** At factors 2.0× and 2.5×, the reported allocated memory (6.1 / 6.3 GB, 14.97 / 15.23 GB) exceeds the 3050 Ti's 4 GB physical capacity, meaning **both models** spill to host memory via WSL2 unified-memory paging. The reported latency at those rows mixes the genuine O(N²) attention cost with PCIe paging cost — and the two models may page differently. The 1.0× and 1.5× rows are clean (allocated <2.1 GB, well under the 4 GB physical) and already show GMFlow trending toward the latency cross-over. The 2.0× / 2.5× rows are kept below as "indicative" but **the original "strongly supported" verdict has been retracted**. Verification on a ≥16 GB physical-memory GPU is the open follow-up.
+> **Scope.** This resolution sweep measured RAFT-32 vs **GMFlow-basic** only. GMFlow-refine was not included in this high-resolution sweep.
+>
+> **Contamination.** At factors 2.0× and 2.5×, the reported allocated memory (6.1 / 6.3 GB, 14.97 / 15.23 GB) exceeds the 3050 Ti's 4 GB physical capacity, meaning **both measured models** spill to host memory via WSL2 unified-memory paging. The reported latency at those rows mixes the genuine O(N²) attention cost with PCIe paging cost — and the two models may page differently. The 1.0× and 1.5× rows are clean (allocated <2.1 GB, well under the 4 GB physical) and already show GMFlow-basic trending toward the latency cross-over. The 2.0× / 2.5× rows are kept below as "indicative" but **the original "strongly supported" verdict has been retracted**. Verification on a ≥16 GB physical-memory GPU is the open follow-up.
 
 Sintel pairs upsampled by factor `f` (bilinear), n=10 timed forwards per cell:
 
-| factor | resolution | RAFT (ms / MB) | GMFlow (ms / MB) | GMFlow / RAFT latency |
+| factor | resolution | RAFT-32 (ms / MB) | GMFlow-basic (ms / MB) | GMFlow-basic / RAFT latency |
 |---|---|---|---|---|
-| 1.00× | 1024×436 | 737 / 529 | 300 / 470 | **0.41×** (GMFlow faster) |
-| 1.50× | 1536×654 | 1,765 / 2,023 | 1,174 / 2,036 | **0.66×** (GMFlow still faster) |
-| 2.00× | 2048×872 | 3,591 / 6,146 | **12,431** / 6,285 | **3.46×** (GMFlow slower) |
-| 2.50× | 2560×1090 | 6,877 / 14,970 | **43,894** / 15,229 | **6.38×** (GMFlow catastrophic) |
+| 1.00× | 1024×436 | 737 / 529 | 300 / 470 | **0.41×** (basic faster) |
+| 1.50× | 1536×654 | 1,765 / 2,023 | 1,174 / 2,036 | **0.66×** (basic still faster) |
+| 2.00× | 2048×872 | 3,591 / 6,146 | **12,431** / 6,285 | **3.46×** (basic slower) |
+| 2.50× | 2560×1090 | 6,877 / 14,970 | **43,894** / 15,229 | **6.38×** (basic catastrophic) |
 
-**Honest read:** the 1.00× and 1.50× rows are clean (allocated <2.1 GB, well under the 4 GB physical) and show RAFT's latency-vs-resolution scaling near-linear (737 → 1765 ms for 2.25× pixels — modest super-linear from the per-pair fixed cost amortizing) while GMFlow climbs faster (300 → 1174 ms = 3.9× for 2.25× pixels). The GMFlow / RAFT latency ratio moves from 0.41× → 0.66× — consistent direction for an O(N²) attention catching up to O(N) refinement, but with only two clean data points the slope is not pinned down. The 2.00× / 2.50× latency numbers reported above (12,431 ms and 43,894 ms for GMFlow; 3,591 ms and 6,877 ms for RAFT) mix the genuine attention cost with PCIe paging cost and **should not be read as model-scaling measurements**. They tell you only that the latency *is enormous* on contaminated hardware, not how O(N²) it is. The 146× / 9.3× scaling ratios that previously appeared here have been removed.
+**Honest read:** the 1.00× and 1.50× rows are clean (allocated <2.1 GB, well under the 4 GB physical) and show RAFT's latency-vs-resolution scaling near-linear (737 → 1765 ms for 2.25× pixels — modest super-linear from the per-pair fixed cost amortizing) while GMFlow-basic climbs faster (300 → 1174 ms = 3.9× for 2.25× pixels). The GMFlow-basic / RAFT latency ratio moves from 0.41× → 0.66× — consistent direction for an O(N²) attention catching up to O(N) refinement, but with only two clean data points the slope is not pinned down. The 2.00× / 2.50× latency numbers reported above (12,431 ms and 43,894 ms for GMFlow-basic; 3,591 ms and 6,877 ms for RAFT) mix the genuine attention cost with PCIe paging cost and **should not be read as model-scaling measurements**. They tell you only that the latency *is enormous* on contaminated hardware, not how O(N²) it is. The 146× / 9.3× scaling ratios that previously appeared here have been removed.
 
-Cross-over on this hardware appears to land between 1.5× and 2× Sintel based on the 1.0× and 1.5× clean rows alone (RAFT/GMFlow latency ratio 0.41× → 0.66× — trajectory consistent with O(N²) catching up). The 2.0× and 2.5× rows show ratios of 3.46× and 6.38× but those are not trustworthy (paging contamination), so the *magnitude* of the blow-up is unknown and the *location* of the cross-over is bracketed only loosely (anywhere from 1.5× to >2×). See §11e for the resolution-sweep follow-up plan.
+Cross-over on this hardware appears to land between 1.5× and 2× Sintel based on the 1.0× and 1.5× clean rows alone (RAFT/GMFlow-basic latency ratio 0.41× → 0.66× — trajectory consistent with O(N²) catching up). The 2.0× and 2.5× rows show ratios of 3.46× and 6.38× but those are not trustworthy (paging contamination), so the *magnitude* of the blow-up is unknown and the *location* of the cross-over is bracketed only loosely (anywhere from 1.5× to >2×). See §11e for the resolution-sweep follow-up plan.
 
 ## 7. Photometric residual (Sintel, mean over non-occluded valid pixels)
 
@@ -301,7 +341,7 @@ Reading: ambush_2/ambush_4/ambush_6/temple_3 dominate the Clean→Final brightne
 
 Per-sequence median ΔEPE (the per-pixel median over the averaged map):
 
-| seq | RAFT median Δ | GMFlow median Δ | seq | RAFT median Δ | GMFlow median Δ |
+| seq | RAFT median Δ | GMFlow-basic median Δ | seq | RAFT median Δ | GMFlow-basic median Δ |
 |---|---|---|---|---|---|
 | alley_1 | +0.005 | +0.007 | market_2 | +0.031 | +0.078 |
 | alley_2 | +0.002 | +0.000 | market_5 | +2.049 | +1.621 |
@@ -316,24 +356,23 @@ Per-sequence median ΔEPE (the per-pixel median over the averaged map):
 | bandage_2 | +0.017 | −0.000 | cave_2 | +1.820 | +1.400 |
 | cave_4 | +0.335 | +0.404 |  |  |  |
 
-ambush_2 dominates the Clean→Final regression on both models, with GMFlow even more affected than RAFT. ambush_4 is the largest gap between models: RAFT degrades ~3× less than GMFlow there (median Δ 5.03 vs 15.25). A handful of sequences (bamboo_1, sleeping_1 for GMFlow, bandage_2 for GMFlow) have **negative** median Δ — Final's motion blur smooths errors more than its photometric shift adds, so Final is *easier* to predict on those sequences. This is the per-pixel evidence behind methodology §4 item 10.
+ambush_2 dominates the Clean→Final regression on both models, with GMFlow-basic even more affected than RAFT. ambush_4 is the largest gap between models: RAFT degrades ~3× less than GMFlow-basic there (median Δ 5.03 vs 15.25). A handful of sequences (bamboo_1, sleeping_1 for GMFlow-basic, bandage_2 for GMFlow-basic) have **negative** median Δ — Final's motion blur smooths errors more than its photometric shift adds, so Final is *easier* to predict on those sequences. This is the per-pixel evidence behind methodology §4 item 10.
 
 ## 7d. Blur / defocus mask via Laplacian-variance (methodology §2.6, §2.8)
 
 Per-pair blur mask = `var(Laplacian(I₁, ksize=3), 7×7) < 20` — windowed Laplacian variance, low variance ⇒ blurred / defocused. Applied as an additional mask in `SintelMetrics`.
 
-| | Clean RAFT | Clean GMFlow | Final RAFT | Final GMFlow |
-|---|---|---|---|---|
-| Blur-pixel fraction (over `valid`) | 8.6% | 8.6% | 17.4% | 17.4% |
-| EPE / blur | 2.18 | **1.88** | **4.03** | 4.67 |
-| AE / blur (°) | 3.77 | **4.79** ← 3.77 better | 6.16 | 8.35 |
-| Bad-1 / blur | 0.108 | **0.182** ← 0.108 better | 0.187 | 0.253 |
-| Bad-10 / blur | 0.029 | 0.030 | 0.066 | 0.072 |
-| A95 / blur | 2.15 | 6.06 | 11.51 | 15.85 |
+| | Clean RAFT | Clean GMFlow-basic | Clean GMFlow-refine | Final RAFT | Final GMFlow-basic | Final GMFlow-refine |
+|---|---:|---:|---:|---:|---:|---:|
+| Blur-pixel fraction (over `valid`) | 12.7% | 12.7% | 12.7% | 34.6% | 34.6% | 34.6% |
+| EPE / blur | 2.175 | 1.881 | **1.405** | 4.029 | 4.669 | **3.866** |
+| AE / blur (°) | 3.774 | 4.794 | **3.459** | **6.165** | 8.355 | 6.580 |
+| Bad-1 / blur | **0.108** | 0.182 | 0.111 | **0.187** | 0.253 | 0.197 |
+| Bad-10 / blur | 0.029 | 0.030 | **0.023** | 0.066 | 0.072 | **0.061** |
 
-Per-frame blur fraction sanity: clean alley_1 = 4.4%, market_2 = 6.9%, ambush_4 ≈ 60%. Final-pass adds renderer motion blur — fraction roughly doubles (alley_1 → 15.5%, market_2 → 25.5%).
+Sequence-wide blur fractions (mean over all pairs in the sequence): clean alley_1 = 4.6%, market_2 = 5.9%, ambush_4 = 35.3%, mountain_1 = 36.4%, temple_3 = 58.1%. Final-pass adds renderer motion blur — global fraction nearly triples 12.7% → 34.6%; per-sequence final: alley_1 = 14.4%, market_2 = 22.5%, ambush_4 = 60.5%, ambush_2 = 81.9%, shaman_3 = 72.9%.
 
-Reading: GMFlow has *lower mean EPE* on blurred pixels of Sintel **clean** (1.88 vs 2.18) but **worse** on every other distributional measure on those same pixels — higher AE (4.79° vs 3.77°), nearly 2× the Bad-1 rate (0.182 vs 0.108), and a 3× larger A95 tail (6.06 vs 2.15). The likely read: GMFlow's predictions on blurred pixels are systematically slightly off (small bias eats into mean EPE less than RAFT's occasional larger errors, but RAFT is more often correct). On Final, where blurred-pixel fraction doubles, RAFT regains the EPE lead (4.03 vs 4.67) too.
+Reading: GMFlow-basic has *lower mean EPE* on blurred pixels of Sintel **clean** (1.881 vs 2.175) but worse AE and Bad-1 than RAFT, so the basic model's clean-blur "win" is not distributionally clean. GMFlow-refine changes that picture: on clean blur it has the best EPE (1.405), best AE (3.459°), and best Bad-10 (0.023), while RAFT is only slightly better on Bad-1 (0.108 vs 0.111). On Final blur, refine again has the best EPE (3.866) and Bad-10 (0.061), but RAFT keeps the best AE (6.165°) and Bad-1 (0.187). Bootstrap agrees with the split: refine beats RAFT on clean-blur EPE, while final-blur EPE is lower for refine as a point estimate but RAFT vs refine is NULL (§11a).
 
 **Confound:** the blur mask correlates with motion magnitude across the 23 sequences (Pearson 0.644, Spearman 0.520; full table in §11c). It is **not** a pure motion-magnitude proxy — `mountain_1` has low motion (4.98 px mean) and high blur fraction (36%), confirming the mask catches actual defocus/specular blur independent of motion. But the moderate correlation means part of the "blur" signal in this table is fast-motion contamination; the EPE/blur differences should be read with that confound in mind, especially on sequences like ambush_4 (60% blur, 32 px mean motion).
 
@@ -355,33 +394,33 @@ EPE / AE / nEPE / Bad-1 numbers per (config, bucket) — all 28 cells × 4 metri
 | config | s0-1 | s1-3 | s3-10 | s10-20 | s20-40 | s40-60 | s60+ |
 |---|---|---|---|---|---|---|---|
 | RAFT clean | **0.161** | **0.223** | **0.665** | **1.173** | **2.417** | **3.488** | 12.30 |
-| GMFlow clean | 0.245 | 0.428 | 0.665 | 1.253 | 2.574 | 3.772 | **11.21** |
+| GMFlow-basic clean | 0.245 | 0.428 | 0.665 | 1.253 | 2.574 | 3.772 | **11.21** |
 | RAFT final | 0.293 | 0.341 | 0.859 | 2.111 | 4.411 | 8.355 | 23.61 |
-| GMFlow final | 0.371 | 0.553 | 1.194 | 2.524 | 4.904 | 8.569 | 23.84 |
+| GMFlow-basic final | 0.371 | 0.553 | 1.194 | 2.524 | 4.904 | 8.569 | 23.84 |
 
 **Normalized EPE = EPE / |gt|  (only on `|gt|>1`):**
 
 | config | s0-1 | s1-3 | s3-10 | s10-20 | s20-40 | s40-60 | s60+ |
 |---|---|---|---|---|---|---|---|
 | RAFT clean | nan | **0.126** | **0.119** | 0.084 | **0.086** | 0.072 | 0.098 |
-| GMFlow clean | nan | 0.253 | 0.118 | **0.089** | 0.091 | **0.077** | **0.096** |
+| GMFlow-basic clean | nan | 0.253 | 0.118 | **0.089** | 0.091 | **0.077** | **0.096** |
 | RAFT final | nan | 0.191 | 0.149 | 0.149 | 0.156 | 0.169 | 0.206 |
-| GMFlow final | nan | 0.326 | 0.210 | 0.176 | 0.173 | 0.175 | 0.210 |
+| GMFlow-basic final | nan | 0.326 | 0.210 | 0.176 | 0.173 | 0.175 | 0.210 |
 
 **AE (degrees) vs speed:**
 
 | config | s0-1 | s1-3 | s3-10 | s10-20 | s20-40 | s40-60 | s60+ |
 |---|---|---|---|---|---|---|---|
 | RAFT clean | 5.72 | 3.78 | 3.00 | 2.80 | 3.43 | 3.41 | 5.29 |
-| GMFlow clean | 9.71 | 6.95 | 4.19 | 3.44 | 3.55 | **3.00** | **3.68** |
+| GMFlow-basic clean | 9.71 | 6.95 | 4.19 | 3.44 | 3.55 | **3.00** | **3.68** |
 | RAFT final | 7.29 | 4.56 | 3.88 | 4.48 | 6.25 | 8.25 | 10.35 |
-| GMFlow final | 10.98 | 8.28 | 5.28 | 5.32 | 6.83 | 8.19 | 9.30 |
+| GMFlow-basic final | 10.98 | 8.28 | 5.28 | 5.32 | 6.83 | 8.19 | 9.30 |
 
 Reading:
 
-- **EPE vs speed**: RAFT < GMFlow at every clean bucket up to s40-60 then they cross — GMFlow s60+ EPE 11.21 < RAFT 12.30. The cross is consistent with H1 (GMFlow's global matching helps on large displacement).
-- **nEPE vs speed**: GMFlow's huge nEPE at s1-3 (0.253 clean, 0.326 final — 2× RAFT) shows GMFlow's small-motion errors are *proportionally* much larger; from s10-20 onwards both models hover around 8–9% on clean. The nEPE curve is U-shaped: highest at slow + fastest motion, lowest in the s10-60 sweet spot.
-- **AE vs speed**: U-shape too, but with model character. GMFlow's AE *decreases* with speed (9.71 → 3.00 over s0-1 to s40-60) — its errors at high speed are more aligned with GT motion. RAFT's AE bottoms out around s10-20 then rises again at s60+.
+- **EPE vs speed**: RAFT < GMFlow-basic at every clean bucket up to s40-60 then they cross — GMFlow-basic s60+ EPE 11.21 < RAFT 12.30. The cross is consistent with H1's point estimate, but §11a shows the basic-vs-RAFT large-motion difference is bootstrap-NULL.
+- **nEPE vs speed**: GMFlow-basic's huge nEPE at s1-3 (0.253 clean, 0.326 final — 2× RAFT) shows GMFlow-basic's small-motion errors are *proportionally* much larger; from s10-20 onwards both models hover around 8–9% on clean. The nEPE curve is U-shaped: highest at slow + fastest motion, lowest in the s10-60 sweet spot.
+- **AE vs speed**: U-shape too, but with model character. GMFlow-basic's AE *decreases* with speed (9.71 → 3.00 over s0-1 to s40-60) — its errors at high speed are more aligned with GT motion. RAFT's AE bottoms out around s10-20 then rises again at s60+.
 - **Bad-1 vs speed** (in CSV): monotonically increasing on every config; RAFT clean s0-1 = 1.5% vs s60+ = 41%, the spread is enormous.
 
 Figures: `results/figures/speed_curves/{epe,ae,nepe,bad1}_vs_speed.png`.
@@ -390,7 +429,7 @@ Figures: `results/figures/speed_curves/{epe,ae,nepe,bad1}_vs_speed.png`.
 
 Per-pair derived occlusion = `‖f12(x) + f21(x + f12(x))‖² > α(‖f12‖² + ‖f21‖²) + β` with `α=0.01`, `β=0.5` (Sundaram et al. 2010 / Meister et al. 2018). Backward flow computed by swapping `(img1, img2)`. Forward predictions reused from saved `.npy`. Compared per-pixel against Sintel native `occlusion == 255` on valid GT.
 
-| | RAFT | GMFlow |
+| | RAFT | GMFlow-basic |
 |---|---|---|
 | native occluded fraction | 7.25% | 7.25% |
 | derived occluded fraction | 6.25% | 4.85% |
@@ -399,11 +438,11 @@ Per-pair derived occlusion = `‖f12(x) + f21(x + f12(x))‖² > α(‖f12‖² 
 | F1 | 0.606 | 0.603 |
 | IoU | 0.435 | 0.432 |
 
-Both models recover ≈0.60 F1 / ≈0.43 IoU of the GT occlusion mask from inference alone. GMFlow's mask is sparser and more precise (predicts fewer occlusions but most are real), RAFT's is denser and higher-recall. The two F1 numbers are essentially indistinguishable (0.606 vs 0.603) despite GMFlow having lower unmatched EPE — the *quality of the inferred occlusion mask* and the *EPE on the occluded region* are independent axes. §2.2 cross-check is satisfied: fwd-bwd consistency is a usable proxy for occlusion when GT is unavailable.
+Both models recover ≈0.60 F1 / ≈0.43 IoU of the GT occlusion mask from inference alone. This forward-backward test was run for RAFT and GMFlow-basic only; GMFlow-refine was not measured here. GMFlow-basic's mask is sparser and more precise (predicts fewer occlusions but most are real), RAFT's is denser and higher-recall. The two F1 numbers are essentially indistinguishable (0.606 vs 0.603) despite GMFlow-basic having lower unmatched EPE — the *quality of the inferred occlusion mask* and the *EPE on the occluded region* are independent axes. §2.2 cross-check is satisfied: fwd-bwd consistency is a usable proxy for occlusion when GT is unavailable.
 
 ## 8. Hypothesis verdicts (Phase 1)
 
-Each verdict now has two layers: **vs GMFlow-basic** (the original report's framing) and **vs GMFlow-refine** (the fair-comparison framing). Bootstrap 95% CIs over the 23 Sintel sequences are reported for hair-margin decisions. Full numbers behind every verdict are in §11.
+Each verdict now has two layers: **vs GMFlow-basic** (the original report's framing) and **vs GMFlow-refine** (the fair-comparison framing). Bootstrap 95% CIs over the 23 Sintel sequences are reported for hair-margin decisions. "Supported", "falsified", and "NULL" are assigned per comparison; if a variant was not measured for that hypothesis, it is marked explicitly. Full numbers behind every verdict are in §11.
 
 | H | Claim | vs GMFlow-basic | vs GMFlow-refine | Final read |
 |---|---|---|---|---|
@@ -411,22 +450,22 @@ Each verdict now has two layers: **vs GMFlow-basic** (the original report's fram
 | 2 | RAFT > sub-pixel | Clean s0_1 +0.084 [+0.059, +0.131] (RAFT wins); Bad-1 +0.062 [+0.045, +0.081] (RAFT wins). | Clean s0_1 NULL; Final s0_1 NULL; Bad-1/all NULL. RAFT's sub-pixel lead **evaporates** vs refine. | **Supported vs basic, falsified vs refine.** The lead was capacity, not architecture. |
 | 3 | RAFT sharper boundaries | F1 0.727 vs 0.697 at τ=1.0 (clean). Lead survives all three thresholds {0.5, 1.0, 2.0}. | F1 0.727 vs **0.757** (refine wins) at τ=1.0 clean, **0.756** at τ=2.0, **0.777** at τ=0.5. | **Supported vs basic, falsified vs refine at every threshold.** |
 | 4 | GMFlow > occlusions | Clean unmatched −1.74 [−3.32, −0.12] (basic wins, p=0.035). Final unmatched NULL. | Clean unmatched −3.39 [−4.91, −2.00] (refine wins). Final unmatched −1.83 [−3.05, −0.51] (refine wins). | **Supported on clean for both basic and refine; only refine is significant on final.** |
-| 5 | Both adequate on untex | Untex EPE NULL between RAFT and basic on clean; refine wins by −0.52 [−1.10, −0.14] clean. Untex / All ratio: RAFT 1.14, basic 1.05, refine 1.05. | Same direction — refine improves untex more than `all`. | **Supported as a *non-blow-up* claim**; the cross-model ratio is not informative — refine is just uniformly better. |
+| 5 | Both adequate on untex | Clean untex EPE: RAFT 1.65 vs basic 1.55, Δ −0.10 [−0.54, +0.18] ⇒ NULL. Final untex EPE: RAFT 3.109 vs basic 3.462, Δ +0.353 [−0.243, +1.215] ⇒ NULL. Basic does not blow up on textureless regions, but it also does not win significantly. | Clean untex EPE: RAFT 1.65 vs refine 1.13, Δ −0.52 [−1.10, −0.14] ⇒ refine wins. Final untex EPE: RAFT 3.1088 vs refine 2.8380, Δ −0.2708 [−0.6493, +0.0331] ⇒ NULL. Untex / All ratio: RAFT 1.14, basic 1.05, refine 1.05. | **Supported as a non-blow-up claim for all measured variants.** Basic is statistically tied with RAFT on untex EPE; refine significantly improves clean untex and is lower-but-NULL on final untex. |
 | 6 | RAFT iter ↔ accuracy trade-off | Full-dataset sweep stands: EPE 1.91/1.59/1.51/1.45 at iters {4,8,12,32}. GMFlow-basic measured 252 ms (n=50 all-three batch). | GMFlow-refine clean EPE **1.073** at **652 ms** (n=50 all-three). RAFT-32 in the same batch is 594 ms / 1.446. Refine costs 10% more latency for 26% lower EPE — not strictly Pareto-dominating RAFT-32 (which is 58 ms cheaper), but the trade slope strongly favors refine. | **Supported as the iter-budget shape;** the Pareto picture against the *available* GMFlow variants is now well-measured (§5 / §6): refine and RAFT-32 are both on the frontier, refine 58 ms slower and 26% more accurate. GMFlow-basic strictly dominates RAFT-12. |
 | 7 | GMFlow more tolerant Clean→Final | RAFT ΔEPE = 1.23; GMFlow-basic = 1.46. Basic degrades **more** than RAFT in raw EPE. | GMFlow-refine ΔEPE = 1.39. Also degrades more than RAFT in raw EPE. | **Falsified.** No GMFlow variant degrades less. The original "partial on matched-relative" framing was a denominator artifact (GMFlow starts worse → same absolute Δ → smaller relative Δ); dropped. |
-| 8 | RAFT weak to weather, GMFlow to noise | Requires RobustSpring | — | **Not pursued.** RobustSpring corruption suite is out of scope for this study. No GT-free robustness numbers are reported. |
-| 9 | GMFlow VRAM blow-up | Sintel 1024×436: both <600 MB and GMFlow 2.6× faster. At 2× Sintel GMFlow's measured latency is 12,431 ms vs RAFT's 3,591 ms; at 2.5× it's 43,894 vs 6,877. | — (resolution sweep is wrapper-agnostic) | **Indicative, NOT verified.** At 2× and 2.5×, allocated memory exceeds the 3050 Ti's 4 GB physical (6.1 GB / 15 GB shown), meaning **both** models are paging through host memory via WSL2's unified-memory mechanism — and they may page differently. The reported latency mixes O(N²) attention scaling with PCIe paging cost; the two cannot be separated locally. The 1.0× and 1.5× rows are clean (well under 4 GB) and already show GMFlow trending toward the cross-over (0.41× → 0.66× latency ratio). Verification on a ≥16 GB physical-memory GPU is still required to call this "supported"; flagged in §6b and §9. |
+| 8 | RAFT weak to weather, GMFlow to noise | Not measured. Requires RobustSpring corruption suite, which is descoped. | Not measured. GMFlow-refine was not evaluated on RobustSpring corruptions either. | **Not pursued.** RobustSpring corruption suite is out of scope for this study. No GT-free corruption-robustness numbers are reported for either GMFlow variant. |
+| 9 | GMFlow VRAM blow-up | Sintel 1024×436: both <600 MB and GMFlow-basic 2.6× faster. At 2× Sintel GMFlow-basic's measured latency is 12,431 ms vs RAFT's 3,591 ms; at 2.5× it's 43,894 vs 6,877. | GMFlow-refine not measured in the resolution sweep. | **Indicative, NOT verified.** At 2× and 2.5×, allocated memory exceeds the 3050 Ti's 4 GB physical (6.1 GB / 15 GB shown), meaning **both measured models** are paging through host memory via WSL2's unified-memory mechanism — and they may page differently. The reported latency mixes O(N²) attention scaling with PCIe paging cost; the two cannot be separated locally. The 1.0× and 1.5× rows are clean (well under 4 GB) and already show GMFlow-basic trending toward the cross-over (0.41× → 0.66× latency ratio). Verification on a ≥16 GB physical-memory GPU is still required to call this "supported"; flagged in §6b and §9. |
 | 10 | Sintel→Middlebury drops unequally | RAFT Middlebury 0.302 vs basic 0.486. Normalized two ways (see §4b rewrite + §11d): (a) `Mid / Sintel-all`: RAFT 0.209, basic 0.328 — "36% gap" depends on this choice; (b) `Mid / Sintel-s0_10` (better-matched motion regime): RAFT 0.839, basic 1.066 — gap is ~27%. | (a) RAFT 0.209 vs refine 0.375; (b) RAFT 0.839 vs refine **1.331** — refine has the worst Sintel→Middlebury ratio of the three, because refine reduces Sintel EPE more than Middlebury EPE. (Both checkpoints are Things-trained zero-shot — refine never saw Sintel, so this is **not** Sintel-overfitting; it's a **motion-regime effect**: refine's extra capacity pays off on Sintel's large/structured motion tail (s10+) and buys little on Middlebury's mostly-<10 px regime.) | **Direction holds — RAFT generalizes best cross-dataset** — but magnitude depends entirely on the normalization choice; both reported above and in §11d. The refine result reads as: higher capacity fits the large-motion regime better, and that gain doesn't transfer to small-motion data. |
 
 ## 9. Caveats and notes
 
 - **Motion-boundary mask is derived** (Sobel + 9×9 dilate), not from Sintel's native `motion_boundaries/`. The `MPI-Sintel-training_extras.zip` checked: it only contains `flow_code/`, `flow_viz/`, `invalid/`, `occlusions/` — no `motion_boundaries/`. The native mask appears not to be publicly distributed. Both pred and GT use the same derivation, so Boundary F-score is internally consistent but not directly comparable to papers that use the native mask. F1 threshold sensitivity tested at τ ∈ {0.5, 1.0, 2.0} — see §11b; verdicts hold across thresholds.
 - **Blur mask threshold is uncalibrated.** `var(Laplacian(I, 3×3), 7×7) < 20` is an order-of-magnitude pick. Per-sequence blur fraction correlates with mean GT-motion at Pearson 0.644 (§11c) — moderate confound, not pure. `mountain_1` (low motion + high blur) confirms the mask isn't only catching fast-motion sequences.
-- **GMFlow A50 mechanism is "coarse-grid upsample residual at small-k/8 multiples", not strictly 1/8-grid quantization** — original wording was over-specific; revised. §11f histograms show partial pile-up at k/8 multiples on slow sequences (8–13% concentration at k=1, 2 for basic), smeared on fast control (ambush_4). Refine reduces but doesn't eliminate.
+- **GMFlow-basic/refine A50 mechanism is "coarse-grid upsample residual at small-k/8 multiples", not strictly 1/8-grid quantization** — original wording was over-specific; revised. §11f histograms show partial pile-up at k/8 multiples on slow sequences (8–13% concentration at k=1, 2 for basic), smeared on fast control (ambush_4). Refine reduces but doesn't eliminate.
 - **Schulze ranking / RobustSpring corruption suite (methodology §1.6, §4 items 11–12) is out of scope** — explicitly descoped, not a follow-up. H8 is "not pursued"; no corruption-robustness numbers in this study.
 - **WSL2 unified memory contaminates the H9 resolution sweep at 2.0× and 2.5×.** See §6b downgrade and §11e plan. The "GMFlow VRAM blow-up at Spring resolution" conclusion is **indicative, not verified** until re-run on a ≥16 GB physical-memory GPU.
 - **GMFlow ablation is now three-way:** basic (no refinement, 1 scale, padding-factor 16) vs with-refine (2 scales, padding-factor 32, the upstream `evaluate.sh` preset). Original report's RAFT-32 vs GMFlow-basic comparison was capacity-asymmetric; §8 verdicts now report both reads. The §3 main table is preserved as the original framing; §11a / §3a contain the symmetric ablation.
-- **Iter sweep was run at two granularities**: subset (alley_1 + market_2 only, ~3 min) showed RAFT-12 minimum at 0.292 EPE on that easy subset; full-dataset (all 23 sequences, ~34 min) shows monotone decrease across the full curve with GMFlow on the Pareto frontier. Both numbers reported above (§5).
+- **Iter sweep was run at two granularities**: subset (alley_1 + market_2 only, ~3 min) showed RAFT-12 minimum at 0.292 EPE on that easy subset; full-dataset (all 23 sequences, ~34 min) shows monotone decrease across the full curve with GMFlow-basic and GMFlow-refine on the Pareto frontier. Both numbers reported above (§5).
 - **Bootstrap CIs use sequence-level resampling**, not pixel-level. Pixels within a sequence are not independent (shared scene). The effective sample size is the 23 Sintel sequences, and pixel-level bootstrap would dramatically under-estimate CI width.
 - **No multiplicity correction in §11a/§11b.** Each CI is individual. Across the ~264 cells in §11a a Bonferroni-corrected threshold (α/264 ≈ 0.0002) would kill the borderline "B wins (just)" / "B wins (modest)" cells. Verdicts in §8 only rely on strongly-significant cells (`|Δ| / CI-half-width > 3`); barely-significant cells are reported but should not carry interpretive weight on their own.
 - **Percentile bootstrap, not BCa.** Heavy-tailed masks (s40+, unmatched) on 23 sequences let one or two sequences (ambush_2, ambush_4) dominate resamples; BCa would correct for this slightly but does not change the qualitative verdicts. For tighter CI endpoints on those masks specifically, switch `paired_bootstrap` to BCa — the framework is the same.
@@ -558,11 +597,18 @@ Refine wins every mask significantly except the two slowest buckets (`s0_1`, `s0
 
 **Sintel final — RAFT vs GMFlow-basic:** ALL EPE masks except `matched` (RAFT wins) and `s0_1`/`s0_10` (RAFT wins) are **NULL**. The "RAFT wins by hair margins on final s40+/s60+/unmatched" reading of the original §3 main table does not survive sequence-bootstrap. Bad-1 and AE differences ARE significant (RAFT wins decisively). Full table omitted for brevity — in `results/bootstrap/final__raft_vs_gmflow_basic.txt`.
 
-**Sintel final — RAFT vs GMFlow-refine:** Refine wins `all`, `unmatched`, `s40+`, `s60+`, `disc` (significant). `matched`, `s0_10`, `s10_40`, `untex`, `blur` are NULL. Bad-1 is NULL globally. RAFT wins `matched-AE`, `s0_1-AE`, `s0_10-AE`. Full table in `results/bootstrap/final__raft_vs_gmflow_refine.txt`.
+**Sintel final — RAFT vs GMFlow-refine:** Refine wins `all`, `unmatched`, `s40+`, `s60+`, `disc` (significant). `matched`, `s0_10`, `s10_40`, `untex`, `blur` are NULL. For `untex`, the exact EPE point estimate is RAFT `3.1088` vs GMFlow-refine `2.8380` (Δ = `−0.2708`, 95% CI `[−0.6493, +0.0331]`, p = `0.0882`), so refine is lower but not statistically separable at 95%. Bad-1 is NULL globally. RAFT wins `matched-AE`, `s0_1-AE`, `s0_10-AE`. Full table in `results/bootstrap/final__raft_vs_gmflow_refine.txt`.
 
 **Sintel final — GMFlow-basic vs GMFlow-refine:** Refine wins **every metric on every mask** (clean and final). The refine upgrade is uniform — not a tradeoff.
 
 ### 11b. Boundary F1 threshold sensitivity
+
+Disc-mask EPE point estimates from `per_seq_stats/*.json` (lower is better):
+
+| Pass | RAFT-32 | GMFlow-basic | GMFlow-refine | best read |
+|---|---:|---:|---:|---|
+| Clean | 3.579 | 3.463 | **2.544** | refine has the lowest boundary-region EPE |
+| Final | 6.258 | 6.787 | **5.762** | refine stays best; RAFT beats basic on final |
 
 F-score at τ ∈ {0.5, 1.0, 2.0} (gradient threshold for the Disc mask):
 
@@ -629,11 +675,11 @@ The 2.0× and 2.5× rows of §6b are contaminated by WSL2 unified-memory paging 
 
 Re-run command (same script, just on a real GPU): `python -m cvflow.runners.run_vram_resolution --factors 1.0 1.5 2.0 2.5 3.0`.
 
-The clean 1.0× and 1.5× rows already show GMFlow's latency ratio against RAFT trending up (0.41× → 0.66× as resolution grows 1.5×). If the trend continues linearly that's roughly cross-over at ~1.7×. If it inflects quadratically the cross-over could be lower. Either is consistent with O(N²) attention.
+The clean 1.0× and 1.5× rows already show GMFlow-basic's latency ratio against RAFT trending up (0.41× → 0.66× as resolution grows 1.5×). If the trend continues linearly that's roughly cross-over at ~1.7×. If it inflects quadratically the cross-over could be lower. Either is consistent with O(N²) attention.
 
-### 11f. Quantization residual — does GMFlow predict on a coarse grid?
+### 11f. Quantization residual — do GMFlow variants predict on a coarse grid?
 
-Original report (§3b key reads) attributed GMFlow's `A50 ≈ 0.41` median EPE to "1/8-grid quantization residual." Tested by histogramming matched-pixel EPE on slow sequences (where any quantization pile-up would be visible) and a fast control where it should smear.
+Original report (§3b key reads) attributed GMFlow-basic's `A50 ≈ 0.41` median EPE to "1/8-grid quantization residual." Tested by histogramming matched-pixel EPE on slow sequences (where any quantization pile-up would be visible) and a fast control where it should smear.
 
 `results/figures/quantization/<model>__<seq>__frame0001.png` for each (model, seq) and the summary CSV give the fractions within ±0.02 of each `k/8` multiple:
 
@@ -660,6 +706,6 @@ Reading:
 - GMFlow-refine retains pile-up at `1/8` (14% on alley_2!) and `2/8` (7.6%). Refine reduces the median EPE (A50 0.13 vs basic's 0.24) but the coarse-grid character of its predictions is still visible.
 - RAFT has 10% mass *exactly at zero* on alley_2 — that's matched pixels where RAFT's prediction is sub-0.02-px correct (the stationary background). GMFlow-basic has 0.05% there; the basic upsample apparently never lands at exactly zero.
 
-Conclusion: original "1/8-grid quantization residual" claim was **partially supported** — GMFlow's predictions do show coarse-grid concentration at small `k/8` multiples on slow sequences and smear on fast control, consistent with the upsample structure leaving a soft residual. But it's a *concentration*, not a *spike*, and refine reduces without eliminating it. §9 wording revised to "coarse-grid upsample residual at small-k/8 multiples".
+Conclusion: original "1/8-grid quantization residual" claim was **partially supported** — GMFlow-basic's predictions do show coarse-grid concentration at small `k/8` multiples on slow sequences and smear on fast control, consistent with the upsample structure leaving a soft residual. But it's a *concentration*, not a *spike*, and GMFlow-refine reduces without eliminating it. §9 wording revised to "coarse-grid upsample residual at small-k/8 multiples".
 
 Histograms saved in `results/figures/quantization/`.
