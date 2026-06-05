@@ -47,3 +47,8 @@ Thumbs.db
 /tmp/
 *.tmp
 *.log
+
+# Local proposal/report artifacts
+/docs/proposalcv.md
+/YZV416E_FinalReport_Template.docx
+/YZV416E_ProjectProposal_Template (1).docx
