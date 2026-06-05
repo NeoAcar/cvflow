@@ -93,6 +93,8 @@ Predictions are written to `results/predictions/<model_tag>/<dataset>/<pass>/<se
 
 1. `docs/eval_methodology.md` — what we measure and why
 2. `docs/initial_plan.md` — feasibility check + repo design + risks (planning gate)
-3. `docs/phase1_results.md` — Phase 1 numbers and per-hypothesis verdict
-4. `progress.md` — what's done, what's pending
-5. `technical.md` — repo structure + per-file purpose
+3. `docs/derived_masks.md` — exactly how Disc / Untex / Blur / Boundary-F1 / fwd-bwd occlusion are computed (kernels + thresholds)
+4. `docs/phase1_results.md` — Phase 1 numbers and per-hypothesis verdict
+5. `docs/demo_walkthrough.md` — code map + 4-min demo script
+6. `progress.md` — what's done, what's pending
+7. `technical.md` — repo structure + per-file purpose

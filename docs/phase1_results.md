@@ -46,30 +46,30 @@ Gate passed end-to-end.
 
 ## 3. Sintel — full per-mask, both passes
 
-Bold = raw winner (lower number). Cells marked with **§** are statistically NULL at 95% sequence-bootstrap CI per §11a — bold winner is not significantly different from the loser. The §3 table below is **the raw point estimates only**; for "is RAFT actually winning here" go to §11a.
+Bold = raw winner (lower number, except Boundary F1 where higher is better). The §3 table below is **raw point estimates only**; for "is this actually significant?" use the pairwise sequence-bootstrap verdicts in §11a.
 
 > **Figure:** `results/figures/report/region_bars_full.png` — three-model per-region EPE bars on the full 1041-pair Sintel dataset, clean and final side-by-side, log y-axis (RAFT-32 blue, GMFlow-basic orange, GMFlow-refine green). The same data as the §3 table below, more glanceable.
 
-| Mask | **Clean RAFT** | **Clean GMFlow-basic** | **Final RAFT** | **Final GMFlow-basic** |
-|---|---|---|---|---|
-| EPE / all | **1.446** § | 1.484 § | **2.678** § | 2.942 § |
-| EPE / matched | **0.646** | 0.822 | **1.585** | 1.902 |
-| EPE / unmatched | 11.69 | **9.95** | 16.67 § | **16.25** § |
-| EPE / s0-1 | **0.161** | 0.245 | **0.293** | 0.371 |
-| EPE / s0-10 | **0.360** § | 0.456 § | **0.509** | 0.724 |
-| EPE / s10-40 | **1.651** § | 1.760 § | **2.994** § | 3.438 § |
-| EPE / s40+ | 8.72 § | **8.19** § | **17.41** § | 17.63 § |
-| EPE / s60+ | 12.30 § | **11.21** § | **23.61** § | 23.84 § |
-| EPE / Disc | 3.58 § | **3.46** § | **6.26** § | 6.79 § |
-| EPE / Untex | 1.65 § | **1.55** § | **3.11** § | 3.46 § |
-| EPE / Blur | 2.18 § | **1.88** § | **4.03** § | 4.67 § |
-| Bad-1 | **0.098** | 0.160 | **0.147** | 0.209 |
-| Bad-3 | **0.044** | 0.059 | **0.081** | 0.098 |
-| Bad-5 | **0.031** | 0.039 | **0.062** | 0.071 |
-| Bad-10 (catastrophic) | **0.021** | 0.023 | **0.043** | 0.047 |
-| Boundary F1 | **0.727** | 0.697 | **0.698** | 0.672 |
+| Mask | **Clean RAFT** | **Clean GMFlow-basic** | **Clean GMFlow-refine** | **Final RAFT** | **Final GMFlow-basic** | **Final GMFlow-refine** |
+|---|---:|---:|---:|---:|---:|---:|
+| EPE / all | 1.446 | 1.484 | **1.073** | 2.678 | 2.942 | **2.462** |
+| EPE / matched | 0.646 | 0.822 | **0.508** | 1.585 | 1.902 | **1.495** |
+| EPE / unmatched | 11.69 | 9.95 | **8.30** | 16.67 | 16.25 | **14.83** |
+| EPE / s0-1 | 0.161 | 0.245 | **0.157** | 0.293 | 0.371 | **0.278** |
+| EPE / s0-10 | 0.360 | 0.456 | **0.302** | **0.509** | 0.724 | 0.510 |
+| EPE / s10-40 | 1.651 | 1.760 | **1.242** | 2.994 | 3.438 | **2.801** |
+| EPE / s40+ | 8.72 | 8.19 | **6.19** | 17.41 | 17.63 | **15.60** |
+| EPE / s60+ | 12.30 | 11.21 | **8.55** | 23.61 | 23.84 | **20.99** |
+| EPE / Disc | 3.58 | 3.46 | **2.54** | 6.26 | 6.79 | **5.76** |
+| EPE / Untex | 1.65 | 1.55 | **1.13** | 3.11 | 3.46 | **2.84** |
+| EPE / Blur | 2.18 | 1.88 | **1.40** | 4.03 | 4.67 | **3.87** |
+| Bad-1 | 0.098 | 0.160 | **0.091** | 0.147 | 0.209 | **0.146** |
+| Bad-3 | 0.044 | 0.059 | **0.039** | 0.081 | 0.098 | **0.077** |
+| Bad-5 | 0.031 | 0.039 | **0.027** | 0.062 | 0.071 | **0.057** |
+| Bad-10 (catastrophic) | 0.021 | 0.023 | **0.017** | 0.043 | 0.047 | **0.039** |
+| Boundary F1 | 0.727 | 0.697 | **0.757** | 0.698 | 0.672 | **0.731** |
 
-Note on Blur row: the main table is RAFT-32 vs GMFlow-basic only; §7d adds GMFlow-refine. Basic has lower clean-blur EPE than RAFT (1.88 vs 2.18), but RAFT wins final-blur EPE against basic (4.03 vs 4.67).
+Note on Blur row: GMFlow-basic has lower clean-blur EPE than RAFT (1.88 vs 2.18), but worse clean-blur AE and Bad-1 (§7d). GMFlow-refine resolves that split on clean blur and also has the lowest final-blur EPE point estimate; final-blur RAFT vs refine is bootstrap-NULL (§11a).
 
 Three-model large-displacement headline (EPE, lower is better), computed from saved `per_seq_stats/*.json`:
 
@@ -664,7 +664,7 @@ The "RAFT generalizes 36% better than basic" in the original §4b uses the `all`
 
 RAFT keeps the directional win on both normalizers. The refine result is notable: refine has **lower** Sintel-s0_10 EPE than basic (0.302 vs 0.456 — a big drop) but only **slightly lower** Middlebury EE (0.402 vs 0.486 — a small drop). Normalized, refine therefore has the *largest* Sintel/Middlebury gap of the three. **This is NOT Sintel-overfitting** (both checkpoints are Things-trained, neither saw Sintel during training); it's a **motion-regime effect**: refine's extra capacity helps Sintel's large/structured-motion content (the s10+ tail) more than it helps Middlebury's all-small-motion regime. Re-phrased: higher capacity fits the large-motion regime better, and that gain doesn't transfer to small-motion data.
 
-> **Figure:** `results/figures/report/middlebury_per_seq.png` — RAFT-32 / basic / refine bars per sequence + MEAN. RAFT lowest on all 8 sequences and on the MEAN. Refine beats basic on 7/8 (Venus is the outlier — refine is *worse* than basic there, the only such reversal across both Sintel passes and Middlebury).
+> **Figure:** `results/figures/report/middlebury_per_seq.png` — RAFT-32 / basic / refine bars per sequence + MEAN. RAFT lowest on 7/8 sequences and on the MEAN; the exception is **Grove3**, where GMFlow-refine is lowest (0.590 vs RAFT 0.679 vs basic 0.770). Refine beats basic on 7/8 (Venus is the outlier — refine is *worse* than basic there, the only such reversal across both Sintel passes and Middlebury).
 
 ### 11e. H9 resolution-sweep follow-up
 

@@ -323,7 +323,7 @@ def fig_clean_to_final(out: Path, root: Path) -> None:
              "Negative bars = sequence got EASIER on Final (motion blur smooths errors).  "
              "ambush_2 dominates the degradation budget.",
              ha="center", fontsize=10, color="#333")
-    ax.legend(loc="upper left")
+    ax.legend(loc="upper right")
     fig.tight_layout()
     fig.savefig(out / "clean_to_final_delta.png")
     plt.close(fig)

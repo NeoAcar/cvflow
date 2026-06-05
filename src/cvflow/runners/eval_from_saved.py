@@ -35,6 +35,9 @@ def main():
     ap.add_argument("--untex-thresh", type=float, default=5.0)
     ap.add_argument("--blur-window", type=int, default=7)
     ap.add_argument("--blur-thresh", type=float, default=20.0)
+    ap.add_argument("--seqs", nargs="+", default=None,
+                    help="If given, restrict evaluation to these sequence names "
+                         "(e.g. --seqs alley_1 market_2). Default: all 23 sequences.")
     ap.add_argument("--dump-json", default=None,
                     help="If set, write per-sequence per-mask raw sums + counts to this JSON path "
                          "(input format for bootstrap_compare).")
@@ -47,7 +50,10 @@ def main():
     f_sum, p_sum, r_sum, n = 0.0, 0.0, 0.0, 0
 
     t0 = time.time()
-    for i, pair in enumerate(ds.pairs()):
+    pair_iter = ds.pairs(seqs=args.seqs)
+    n_total = ds.count() if args.seqs is None else sum(
+        len(list((ds.root / args.pass_ / s).glob("frame_*.png"))) - 1 for s in args.seqs)
+    for i, pair in enumerate(pair_iter):
         npy = pred_dir / pair.seq / f"frame_{pair.idx:04d}.npy"
         pred = np.load(npy)
         disc = disc_mask(pair.gt_flow, args.disc_thresh)
@@ -59,7 +65,7 @@ def main():
         p_sum += p; r_sum += r; f_sum += f; n += 1
         fscore_per_seq[pair.seq].append(f)
         if (i + 1) % 200 == 0:
-            print(f"  [{i+1:4d}/{ds.count()}] {time.time()-t0:5.1f}s")
+            print(f"  [{i+1:4d}/{n_total}] {time.time()-t0:5.1f}s")
 
     s = m.global_summary()
     by_seq = m.per_seq_epe_all()

@@ -84,6 +84,8 @@ def main():
         "raft-raft-things-iter32:final",
         "gmflow-gmflow_things-e9887eda:clean",
         "gmflow-gmflow_things-e9887eda:final",
+        "gmflow-gmflow_with_refine_things-36579974:clean",
+        "gmflow-gmflow_with_refine_things-36579974:final",
     ])
     args = ap.parse_args()
 
@@ -101,13 +103,15 @@ def main():
     for spec, r in results.items():
         print(f"  {spec:60s} {r['count']}")
 
-    # Plot — one PNG per metric, all 4 configs on the same axes
+    # Plot — one PNG per metric, all configs on the same axes
     x = np.arange(len(_LABELS))
     style = {
-        "raft-raft-things-iter32:clean":      dict(color="C0", linestyle="-",  label="RAFT clean"),
-        "raft-raft-things-iter32:final":      dict(color="C0", linestyle="--", label="RAFT final"),
-        "gmflow-gmflow_things-e9887eda:clean":dict(color="C1", linestyle="-",  label="GMFlow clean"),
-        "gmflow-gmflow_things-e9887eda:final":dict(color="C1", linestyle="--", label="GMFlow final"),
+        "raft-raft-things-iter32:clean":      dict(color="C0", linestyle="-",  label="RAFT-32 clean"),
+        "raft-raft-things-iter32:final":      dict(color="C0", linestyle="--", label="RAFT-32 final"),
+        "gmflow-gmflow_things-e9887eda:clean":dict(color="C1", linestyle="-",  label="GMFlow-basic clean"),
+        "gmflow-gmflow_things-e9887eda:final":dict(color="C1", linestyle="--", label="GMFlow-basic final"),
+        "gmflow-gmflow_with_refine_things-36579974:clean":dict(color="C2", linestyle="-",  label="GMFlow-refine clean"),
+        "gmflow-gmflow_with_refine_things-36579974:final":dict(color="C2", linestyle="--", label="GMFlow-refine final"),
     }
     metrics = [
         ("epe",   "EPE (px)",               False),
