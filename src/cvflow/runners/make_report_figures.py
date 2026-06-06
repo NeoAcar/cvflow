@@ -160,7 +160,7 @@ def fig_pareto(out: Path) -> None:
     ax.set_title("Latency vs Accuracy on Sintel clean (full 1041 pairs)")
     ax.set_xlim(left=130)
     txt = ("Pareto frontier (n=50 batch):  GMFlow-basic  →  RAFT-32  →  GMFlow-refine\n"
-           "•  GMFlow-basic strictly dominates RAFT-12 (faster + more accurate)\n"
+           "•  GMFlow-basic appears to dominate RAFT-12 (separate timing runs)\n"
            "•  Refine 10% slower than RAFT-32 but 26% more accurate")
     ax.text(0.02, 0.04, txt, transform=ax.transAxes, fontsize=9.5,
             verticalalignment="bottom",
