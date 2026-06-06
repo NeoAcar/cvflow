@@ -1,6 +1,6 @@
 # cvflow
 
-Inference-only evaluation of RAFT and GMFlow on MPI-Sintel and Middlebury for the Topic E final project (Flow Estimation Robustness). RobustSpring / corruption-robustness work is **out of scope** for this study — H8 in `docs/phase1_results.md` §8 is marked "not pursued".
+Inference-only evaluation of RAFT and GMFlow on MPI-Sintel and Middlebury for the Topic E final project (Flow Estimation Robustness). RobustSpring / corruption-robustness work is **out of scope** for this study.
 
 ## Layout
 
@@ -9,10 +9,10 @@ src/cvflow/         pipeline code (datasets, models, masks, metrics, runners)
 RAFT/RAFT/          upstream RAFT repo (princeton-vl/RAFT) — model code + checkpoints
 gmflow/gmflow/      upstream GMFlow repo (haofeixu/gmflow) — model code + checkpoints
 datasets/           MPI-Sintel + Middlebury 'other' set on disk
-docs/               methodology, plan, Phase 1 results
+docs/               methodology, plan, results notes, derived-mask notes, demo walkthrough
+figures/            report/demo figures collected from the experiment outputs
 results/            saved predictions (.npy) and metric tables
-cache/              derived mask cache (currently unused — masks recomputed)
-logs/               per-run logs
+results/figures/    generated plots used by the report and presentation
 ```
 
 ## Environment
@@ -47,7 +47,33 @@ Other variants (`*-sintel`, `*-kitti`, `*-chairs`) are downloaded but unused.
 
 ## Datasets
 
-The Sintel training tarball goes under `datasets/Sintel/training/{clean,final,flow,occlusions,invalid,...}/`. The Middlebury "other" set goes under `datasets/Middleburry/{other-data,other-gt-flow}/`. **`motion_boundaries/` is missing from the on-disk Sintel** — we derive the Disc mask from GT flow (see methodology §2.4).
+Download the datasets from the official benchmark pages:
+
+- MPI-Sintel optical flow downloads: http://sintel.is.tue.mpg.de/downloads
+- Middlebury optical flow data: https://vision.middlebury.edu/flow/data/
+
+Put them in these paths relative to the repo root:
+
+```text
+datasets/
+  Sintel/
+    training/
+      clean/
+      final/
+      flow/
+      occlusions/
+      invalid/
+      ...
+  Middleburry/
+    other-data/
+    other-gt-flow/
+```
+
+For Sintel, download/extract the training set pieces needed for optical-flow evaluation: Clean images, Final images, ground-truth flow, occlusions, and invalid masks. The code expects the final layout to look like `datasets/Sintel/training/clean/<sequence>/frame_0001.png` and `datasets/Sintel/training/flow/<sequence>/frame_0001.flo`.
+
+For Middlebury, download the "other" image data and the corresponding ground-truth flow package. The repo path is intentionally spelled `Middleburry` because the existing code uses that folder name. The code expects paths like `datasets/Middleburry/other-data/Grove2/frame10.png` and `datasets/Middleburry/other-gt-flow/Grove2/flow10.flo`.
+
+**`motion_boundaries/` is missing from the on-disk Sintel data used here** — we derive the Disc mask from GT flow instead (see `docs/derived_masks.md` and methodology §2.4).
 
 ## Run
 
@@ -72,7 +98,7 @@ python -m cvflow.runners.run_raft_itersweep
 python -m cvflow.runners.run_latency_vram --n 50
 python -m cvflow.runners.run_photometric
 python -m cvflow.runners.delta_epe_maps --pred-root results/predictions/raft-raft-things-iter32
-python -m cvflow.runners.run_vram_resolution               # H9 — needs ≥16 GB GPU for clean reading
+python -m cvflow.runners.run_vram_resolution               # H8 — needs >=16 GB GPU for clean reading
 python -m cvflow.runners.run_fwdbwd_occlusion --model raft \
   --fwd-cache results/predictions/raft-raft-things-iter32/sintel/clean
 python -m cvflow.runners.speed_curves
